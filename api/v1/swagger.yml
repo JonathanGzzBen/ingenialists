@@ -1,0 +1,135 @@
+swagger: "2.0"
+schemes:
+- http
+consumes:
+- application/json
+produces:
+- application/json
+info:
+  contact:
+    email: jonathangzzben@gmail.com
+    name: JonathanGzzBen
+    url: https://github.com/JonathanGzzBen
+  description: API for the Ingenialists website
+  title: ingenialists-api-v1
+  version: 0.1.0
+SecurityDefinitions:
+  OauthSecurity:
+    type: oauth2
+    flow: accessCode
+    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth'
+    tokenUrl: 'https://www.googleapis.com/oauth2/v4/token'
+    scopes:
+      admin: Admin scope
+      writer: Writer scope
+      user: User scope
+security:
+  - OauthSecurity:
+    - user
+paths: {}
+definitions:
+  principal:
+    type: string
+  user:
+    type: object
+    required:
+      - id
+      - name
+      - gender
+      - birthDate
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: internal identifier of user
+      name:
+        type: string
+        format: string
+        minLength: 1
+      birthDate:
+        type: string
+        format: date
+      gender:
+        type: string
+        format: string
+        minLength: 1
+      profilePicUrl:
+        type: string
+        format: string
+      description:
+        type: string
+        format: string
+      shortDescription:
+        type: string
+        format: string
+        description: short description for previews
+      role:
+        type: string
+        format: string
+  article:
+    type: object
+    required:
+      - id
+      - userId
+      - categoryId
+      - publishDateTime
+      - body
+      - title
+    properties:
+      id:
+        type: string
+        format: string
+      userId:
+        type: string
+        format: string
+        description: id of user that created this article
+      categoryId:
+        type: string
+        format: string
+        description: id of category to which this article belongs
+      publishDateTime:
+        type: string
+        format: date-time
+      body:
+        type: string
+        format: string
+        description: content of the article in markdown format
+      title:
+        type: string
+        format: string
+      imageUrl:
+        type: string
+        format: string
+        description: url of image for article preview
+      tags:
+        type: string
+        format: string
+        description: tags for this article, each separated by newline character
+  category:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: string
+        format: string
+      name:
+        type: string
+        format: string
+      imageUrl:
+        type: string
+        format: string
+        description: url of image for category
+  error:
+    type: object
+    required:
+      - messsage
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
+        format: string
+
