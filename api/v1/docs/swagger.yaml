@@ -1,0 +1,51 @@
+definitions:
+  models.APIError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+  models.User:
+    properties:
+      birthdate:
+        type: string
+      description:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      profilePictureUrl:
+        type: string
+      role:
+        type: string
+      shortDescription:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /users:
+    get:
+      description: Get all registered users.
+      operationId: GetAllUsers
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Get all users
+      tags:
+      - users
+swagger: "2.0"
