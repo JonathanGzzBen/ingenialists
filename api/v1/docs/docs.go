@@ -95,6 +95,39 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/users/{id}": {
+            "get": {
+                "description": "Get user with matching ID.",
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user",
+                "operationId": "GetUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -121,6 +154,9 @@ var doc = `{
                     "type": "string"
                 },
                 "gender": {
+                    "type": "string"
+                },
+                "googleSub": {
                     "type": "string"
                 },
                 "id": {

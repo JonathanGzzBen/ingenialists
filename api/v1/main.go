@@ -29,6 +29,7 @@ func main() {
 		ur := v1.Group("/users")
 		{
 			ur.GET("/", controllers.GetAllUsers)
+			ur.GET("/:id", controllers.GetUser)
 		}
 		ar := v1.Group("/auth")
 		{
