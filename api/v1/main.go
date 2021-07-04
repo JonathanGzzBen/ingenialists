@@ -9,29 +9,36 @@ import (
 	_ "github.com/JonathanGzzBen/ingenialists/api/v1/docs"
 )
 
-// 	@title Ingenialists API V1
-// 	@version 0.1.0
-// 	@description This is Ingenialist's API
+// @title Ingenialists API V1
+// @version 0.1.0
+// @description This is Ingenialist's API
 //
-// 	@contact.name JonathanGzzBen
-// 	@contact.url http://www.github.com/JonathanGzzBen
-// 	@contact.email jonathangzzben@gmail.com
+// @contact.name JonathanGzzBen
+// @contact.url http://www.github.com/JonathanGzzBen
+// @contact.email jonathangzzben@gmail.com
+// @license.name MIT License
+// @license.url https://mit-license.org/
 //
-// 	@license.name MIT License
-// 	@license.url https://mit-license.org/
-//
-// 	@host wwww.ingenialists.com
-// 	@BasePath /v1
+// @host localhost:8080
+// @BasePath /v1
 func main() {
 	r := gin.Default()
 
+	v1 := r.Group("/v1")
+	{
+		ur := v1.Group("/users")
+		{
+			ur.GET("/", controllers.GetAllUsers)
+		}
+		ar := v1.Group("/auth")
+		{
+			ar.GET("/google-login", controllers.LoginGoogle)
+			ar.GET("/google-callback", controllers.GoogleCallback)
+		}
+	}
+
 	swaggerUrl := ginSwagger.URL("http://localhost:8080/swagger/doc.json")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
-
-	ur := r.Group("/users")
-	{
-		ur.GET("/", controllers.GetAllUsers)
-	}
 
 	r.Run()
 }

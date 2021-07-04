@@ -18,12 +18,57 @@ var doc = `{
     "info": {
         "description": "{{.Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "JonathanGzzBen",
+            "url": "http://www.github.com/JonathanGzzBen",
+            "email": "jonathangzzben@gmail.com"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://mit-license.org/"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/google-callback": {
+            "get": {
+                "description": "Logins with Google Oauth2",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Callback for Google Oauth2 login",
+                "operationId": "GoogleCallback",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/google-login": {
+            "get": {
+                "description": "Logins with Google Oauth2",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login with Google",
+                "operationId": "LoginGoogle",
+                "responses": {
+                    "302": {
+                        "description": "Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Get all registered users.",
@@ -109,12 +154,12 @@ type swaggerInfo struct {
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
-	Version:     "",
-	Host:        "",
-	BasePath:    "",
+	Version:     "0.1.0",
+	Host:        "localhost:8080",
+	BasePath:    "/v1",
 	Schemes:     []string{},
-	Title:       "",
-	Description: "",
+	Title:       "Ingenialists API V1",
+	Description: "This is Ingenialist's API",
 }
 
 type s struct{}

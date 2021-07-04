@@ -1,9 +1,59 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "This is Ingenialist's API",
+        "title": "Ingenialists API V1",
+        "contact": {
+            "name": "JonathanGzzBen",
+            "url": "http://www.github.com/JonathanGzzBen",
+            "email": "jonathangzzben@gmail.com"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://mit-license.org/"
+        },
+        "version": "0.1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/v1",
     "paths": {
+        "/auth/google-callback": {
+            "get": {
+                "description": "Logins with Google Oauth2",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Callback for Google Oauth2 login",
+                "operationId": "GoogleCallback",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/google-login": {
+            "get": {
+                "description": "Logins with Google Oauth2",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login with Google",
+                "operationId": "LoginGoogle",
+                "responses": {
+                    "302": {
+                        "description": "Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Get all registered users.",

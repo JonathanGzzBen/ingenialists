@@ -1,3 +1,4 @@
+basePath: /v1
 definitions:
   models.APIError:
     properties:
@@ -27,9 +28,44 @@ definitions:
       shortDescription:
         type: string
     type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: jonathangzzben@gmail.com
+    name: JonathanGzzBen
+    url: http://www.github.com/JonathanGzzBen
+  description: This is Ingenialist's API
+  license:
+    name: MIT License
+    url: https://mit-license.org/
+  title: Ingenialists API V1
+  version: 0.1.0
 paths:
+  /auth/google-callback:
+    get:
+      description: Logins with Google Oauth2
+      operationId: GoogleCallback
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Callback for Google Oauth2 login
+      tags:
+      - auth
+  /auth/google-login:
+    get:
+      description: Logins with Google Oauth2
+      operationId: LoginGoogle
+      responses:
+        "302":
+          description: Found
+          schema:
+            type: string
+      summary: Login with Google
+      tags:
+      - auth
   /users:
     get:
       description: Get all registered users.
