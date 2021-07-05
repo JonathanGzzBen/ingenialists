@@ -37,11 +37,12 @@ func main() {
 
 	v1 := r.Group("/v1")
 	{
+		uc := controllers.NewUsersController(db)
 		ur := v1.Group("/users")
 		{
-			ur.GET("/", controllers.GetAllUsers)
-			ur.GET("/:id", controllers.GetUser)
-			ur.POST("/", controllers.CreateUser)
+			ur.GET("/", uc.GetAllUsers)
+			ur.GET("/:id", uc.GetUser)
+			ur.POST("/", uc.CreateUser)
 		}
 		ar := v1.Group("/auth")
 		{
