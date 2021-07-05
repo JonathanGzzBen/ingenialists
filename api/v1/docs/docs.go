@@ -32,25 +32,6 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/google-callback": {
-            "get": {
-                "description": "Logins with Google Oauth2",
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Callback for Google Oauth2 login",
-                "operationId": "GoogleCallback",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/auth/google-login": {
             "get": {
                 "description": "Logins with Google Oauth2",
@@ -219,7 +200,7 @@ var doc = `{
             "properties": {
                 "birthdate": {
                     "type": "string",
-                    "example": "2006-01-02T15:04:05Z07:00"
+                    "example": "2006-01-02T15:04:05Z"
                 },
                 "description": {
                     "type": "string"

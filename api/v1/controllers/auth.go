@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
+	"gorm.io/gorm"
 )
 
 var (
@@ -30,6 +31,10 @@ var (
 	}
 )
 
+type AuthController struct {
+	db *gorm.DB
+}
+
 type googleUserInfoResponse struct {
 	Sub           string `json:"sub"`
 	Name          string `json:"name"`
@@ -41,6 +46,13 @@ type googleUserInfoResponse struct {
 	Locale        string `json:"locale"`
 }
 
+func NewAuthController(db *gorm.DB) AuthController {
+	ac := AuthController{
+		db: db,
+	}
+	return ac
+}
+
 // LoginGoogle is the handler for GET requests to /auth/google-login
 // 	@ID LoginGoogle
 // 	@Summary Login with Google
@@ -48,19 +60,13 @@ type googleUserInfoResponse struct {
 // 	@Tags auth
 // 	@Success 302 {object} string
 // 	@Router /auth/google-login [get]
-func LoginGoogle(c *gin.Context) {
+func (ac *AuthController) LoginGoogle(c *gin.Context) {
 	url := googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 // LoginGoogle is the handler for GET requests to /auth/google-login
-// 	@ID GoogleCallback
-// 	@Summary Callback for Google Oauth2 login
-// 	@Description Logins with Google Oauth2
-// 	@Tags auth
-// 	@Success 200 {object} map[string]interface{}
-// 	@Router /auth/google-callback [get]
-func GoogleCallback(c *gin.Context) {
+func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	if c.Request.URL.Query().Get("state") != state {
 		log.Println("state did not match")
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "state did not match"})

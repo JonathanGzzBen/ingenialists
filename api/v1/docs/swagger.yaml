@@ -38,7 +38,7 @@ definitions:
   models.User:
     properties:
       birthdate:
-        example: 2006-01-02T15:04:05Z07:00
+        example: "2006-01-02T15:04:05Z"
         type: string
       description:
         type: string
@@ -71,19 +71,6 @@ info:
   title: Ingenialists API V1
   version: 0.1.0
 paths:
-  /auth/google-callback:
-    get:
-      description: Logins with Google Oauth2
-      operationId: GoogleCallback
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Callback for Google Oauth2 login
-      tags:
-      - auth
   /auth/google-login:
     get:
       description: Logins with Google Oauth2

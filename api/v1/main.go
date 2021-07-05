@@ -44,10 +44,11 @@ func main() {
 			ur.GET("/:id", uc.GetUser)
 			ur.POST("/", uc.CreateUser)
 		}
+		ac := controllers.NewAuthController(db)
 		ar := v1.Group("/auth")
 		{
-			ar.GET("/google-login", controllers.LoginGoogle)
-			ar.GET("/google-callback", controllers.GoogleCallback)
+			ar.GET("/google-login", ac.LoginGoogle)
+			ar.GET("/google-callback", ac.GoogleCallback)
 		}
 	}
 
