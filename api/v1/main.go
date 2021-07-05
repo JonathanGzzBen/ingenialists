@@ -41,6 +41,7 @@ func main() {
 		{
 			ur.GET("/", controllers.GetAllUsers)
 			ur.GET("/:id", controllers.GetUser)
+			ur.POST("/", controllers.CreateUser)
 		}
 		ar := v1.Group("/auth")
 		{

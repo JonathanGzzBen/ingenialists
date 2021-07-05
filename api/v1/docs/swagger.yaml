@@ -1,5 +1,31 @@
 basePath: /v1
 definitions:
+  controllers.CreateUserDTO:
+    properties:
+      birthdate:
+        example: "2006-01-02T15:04:05Z"
+        type: string
+      description:
+        type: string
+      gender:
+        type: string
+      googleSub:
+        type: string
+      name:
+        type: string
+      profilePictureUrl:
+        type: string
+      role:
+        example: User
+        type: string
+      shortDescription:
+        type: string
+    required:
+    - birthdate
+    - gender
+    - name
+    - role
+    type: object
   models.APIError:
     properties:
       code:
@@ -21,6 +47,7 @@ definitions:
       googleSub:
         type: string
       id:
+        readOnly: true
         type: integer
       name:
         type: string
@@ -86,6 +113,28 @@ paths:
           schema:
             $ref: '#/definitions/models.APIError'
       summary: Get all users
+      tags:
+      - users
+    post:
+      description: Creates a new user.
+      operationId: CreateUser
+      parameters:
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateUserDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Create user
       tags:
       - users
   /users/{id}:

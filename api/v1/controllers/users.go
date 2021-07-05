@@ -1,22 +1,24 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
 )
 
 type CreateUserDTO struct {
-	GoogleSub         string `form:"googleSub" json:"googleSub"`
-	Name              string `form:"name" json:"name" binding:"required"`
-	Birthdate         string `form:"birthdate" json:"birthdate" binding:"required"`
-	Gender            string `form:"gender" json:"gender" binding:"required"`
-	ProfilePictureURL string `form:"profilePictureUrl" json:"profilePictureUrl"`
-	Description       string `form:"description" json:"description"`
-	ShortDescription  string `form:"shortDescription" json:"shortDescription"`
-	Role              string `form:"role" json:"role" binding:"required" example:"User"`
+	GoogleSub         string    `form:"googleSub" json:"googleSub"`
+	Name              string    `form:"name" json:"name" binding:"required"`
+	Birthdate         time.Time `form:"birthdate" json:"birthdate" binding:"required" example:"2006-01-02T15:04:05Z"`
+	Gender            string    `form:"gender" json:"gender" binding:"required"`
+	ProfilePictureURL string    `form:"profilePictureUrl" json:"profilePictureUrl"`
+	Description       string    `form:"description" json:"description"`
+	ShortDescription  string    `form:"shortDescription" json:"shortDescription"`
+	Role              string    `form:"role" json:"role" binding:"required" example:"User"`
 }
 
 var mockUsers = []models.User{
@@ -75,4 +77,44 @@ func GetUser(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "user not found"})
+}
+
+// CreateUser is the handler for POST requests to /users
+// 	@ID CreateUser
+// 	@Summary Create user
+// 	@Description Creates a new user.
+// 	@Tags users
+// 	@Param user body CreateUserDTO true "User"
+// 	@Success 200 {object} models.User
+// 	@Failure 400 {object} models.APIError
+// 	@Router /users [post]
+func CreateUser(c *gin.Context) {
+	var cu CreateUserDTO
+
+	if err := c.ShouldBindJSON(&cu); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid create user request: " + err.Error()})
+		return
+	}
+
+	u, err := parseCreateUserDTO(cu)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "could not parse user: " + err.Error()})
+		return
+	}
+
+	db.Create(&u)
+	c.JSON(http.StatusOK, u)
+}
+
+func parseCreateUserDTO(cu CreateUserDTO) (*models.User, error) {
+	cuJSON, err := json.Marshal(cu)
+	if err != nil {
+		return nil, err
+	}
+	var u models.User
+	err = json.Unmarshal(cuJSON, &u)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }

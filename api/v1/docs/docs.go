@@ -94,6 +94,39 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Creates a new user.",
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create user",
+                "operationId": "CreateUser",
+                "parameters": [
+                    {
+                        "description": "User",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateUserDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    }
+                }
             }
         },
         "/users/{id}": {
@@ -131,6 +164,43 @@ var doc = `{
         }
     },
     "definitions": {
+        "controllers.CreateUserDTO": {
+            "type": "object",
+            "required": [
+                "birthdate",
+                "gender",
+                "name",
+                "role"
+            ],
+            "properties": {
+                "birthdate": {
+                    "type": "string",
+                    "example": "2006-01-02T15:04:05Z"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "googleSub": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "profilePictureUrl": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "User"
+                },
+                "shortDescription": {
+                    "type": "string"
+                }
+            }
+        },
         "models.APIError": {
             "type": "object",
             "properties": {
@@ -161,7 +231,8 @@ var doc = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "readOnly": true
                 },
                 "name": {
                     "type": "string"
