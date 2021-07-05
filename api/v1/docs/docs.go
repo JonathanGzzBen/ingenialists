@@ -148,7 +148,8 @@ var doc = `{
             "type": "object",
             "properties": {
                 "birthdate": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2006-01-02T15:04:05Z07:00"
                 },
                 "description": {
                     "type": "string"
@@ -169,7 +170,8 @@ var doc = `{
                     "type": "string"
                 },
                 "role": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "User"
                 },
                 "shortDescription": {
                     "type": "string"

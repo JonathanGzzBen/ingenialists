@@ -8,9 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type CreateUserDTO struct {
+	GoogleSub         string `form:"googleSub" json:"googleSub"`
+	Name              string `form:"name" json:"name" binding:"required"`
+	Birthdate         string `form:"birthdate" json:"birthdate" binding:"required"`
+	Gender            string `form:"gender" json:"gender" binding:"required"`
+	ProfilePictureURL string `form:"profilePictureUrl" json:"profilePictureUrl"`
+	Description       string `form:"description" json:"description"`
+	ShortDescription  string `form:"shortDescription" json:"shortDescription"`
+	Role              string `form:"role" json:"role" binding:"required" example:"User"`
+}
+
 var mockUsers = []models.User{
 	{
-		ID:               1,
 		GoogleSub:        "21231231234",
 		Name:             "First Mock User",
 		Gender:           "male",
@@ -19,7 +29,6 @@ var mockUsers = []models.User{
 		Role:             "user",
 	},
 	{
-		ID:               2,
 		GoogleSub:        "59343786781",
 		Name:             "Second Mock User",
 		Gender:           "male",
@@ -28,6 +37,8 @@ var mockUsers = []models.User{
 		Role:             "user",
 	},
 }
+
+var db, _ = models.DB()
 
 // GetAllUsers is the handler for GET requests to /users
 // 	@ID GetAllUsers
@@ -38,7 +49,12 @@ var mockUsers = []models.User{
 // 	@Failure 500 {object} models.APIError
 // 	@Router /users [get]
 func GetAllUsers(c *gin.Context) {
-	users := mockUsers
+	var users models.User
+	result := db.Find(&users)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not connect to database"})
+		return
+	}
 	c.JSON(http.StatusOK, users)
 }
 

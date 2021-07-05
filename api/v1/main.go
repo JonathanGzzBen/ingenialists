@@ -1,12 +1,15 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/controllers"
 	_ "github.com/JonathanGzzBen/ingenialists/api/v1/docs"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 )
 
 // @title Ingenialists API V1
@@ -22,6 +25,14 @@ import (
 // @host localhost:8080
 // @BasePath /v1
 func main() {
+
+	// Initialize database
+	db, err := models.DB()
+	if err != nil {
+		log.Panic("could not open database file")
+	}
+	db.AutoMigrate(&models.User{})
+
 	r := gin.Default()
 
 	v1 := r.Group("/v1")
