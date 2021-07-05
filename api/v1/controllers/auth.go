@@ -3,11 +3,11 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
 	"gorm.io/gorm"
@@ -68,7 +68,6 @@ func (ac *AuthController) LoginGoogle(c *gin.Context) {
 // LoginGoogle is the handler for GET requests to /auth/google-login
 func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	if c.Request.URL.Query().Get("state") != state {
-		log.Println("state did not match")
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "state did not match"})
 		return
 	}
@@ -77,19 +76,35 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	ctx := context.Background()
 	token, err := googleConfig.Exchange(ctx, authCode)
 	if err != nil {
-		log.Println("failed to exchange token", err.Error())
-		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to exchange token"})
+		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to exchange token: " + err.Error()})
 		return
 	}
-	log.Println("Refresh token:", token.RefreshToken)
-	log.Println("Access token:", token.AccessToken)
-	log.Println("Getting user info...")
 	response, err := http.Get(googleUserInfoURL + "?access_token=" + token.AccessToken)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to get user info"})
+		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to get user info: " + err.Error()})
+		return
 	}
 	defer response.Body.Close()
 	var uinfo googleUserInfoResponse
 	json.NewDecoder(response.Body).Decode(&uinfo)
-	c.JSON(http.StatusOK, gin.H{"token": token, "user info": uinfo})
+
+	var u models.User
+	u.GoogleAccessToken = token.AccessToken
+	res := ac.db.Where("google_sub = ? ", uinfo.Sub).First(&u)
+	// If there is no user with that sub, create one
+	if res.Error != nil {
+		u = models.User{
+			GoogleSub:          uinfo.Sub,
+			GoogleRefreshToken: token.RefreshToken,
+			GoogleAccessToken:  token.AccessToken,
+			Token:              uuid.New(),
+			ProfilePictureURL:  uinfo.Picture,
+			Name:               uinfo.Name,
+		}
+		ac.db.Save(&u)
+		c.JSON(http.StatusOK, u)
+		return
+	}
+	// If user found with that sub, return it
+	c.JSON(http.StatusOK, u)
 }

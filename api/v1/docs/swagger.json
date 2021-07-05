@@ -211,6 +211,9 @@
                 },
                 "shortDescription": {
                     "type": "string"
+                },
+                "token": {
+                    "type": "string"
                 }
             }
         }

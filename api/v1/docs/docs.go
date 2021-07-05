@@ -226,6 +226,9 @@ var doc = `{
                 },
                 "shortDescription": {
                     "type": "string"
+                },
+                "token": {
+                    "type": "string"
                 }
             }
         }
