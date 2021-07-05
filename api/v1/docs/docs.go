@@ -231,8 +231,7 @@ var doc = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer",
-                    "readOnly": true
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"

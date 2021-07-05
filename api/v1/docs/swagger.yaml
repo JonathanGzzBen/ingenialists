@@ -47,7 +47,6 @@ definitions:
       googleSub:
         type: string
       id:
-        readOnly: true
         type: integer
       name:
         type: string

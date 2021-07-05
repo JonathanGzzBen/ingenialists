@@ -11,33 +11,14 @@ import (
 )
 
 type CreateUserDTO struct {
-	GoogleSub         string    `form:"googleSub" json:"googleSub"`
-	Name              string    `form:"name" json:"name" binding:"required"`
-	Birthdate         time.Time `form:"birthdate" json:"birthdate" binding:"required" example:"2006-01-02T15:04:05Z"`
-	Gender            string    `form:"gender" json:"gender" binding:"required"`
-	ProfilePictureURL string    `form:"profilePictureUrl" json:"profilePictureUrl"`
-	Description       string    `form:"description" json:"description"`
-	ShortDescription  string    `form:"shortDescription" json:"shortDescription"`
-	Role              string    `form:"role" json:"role" binding:"required" example:"User"`
-}
-
-var mockUsers = []models.User{
-	{
-		GoogleSub:        "21231231234",
-		Name:             "First Mock User",
-		Gender:           "male",
-		Description:      "I am the first user of this website",
-		ShortDescription: "First user",
-		Role:             "user",
-	},
-	{
-		GoogleSub:        "59343786781",
-		Name:             "Second Mock User",
-		Gender:           "male",
-		Description:      "I am the second user of this website",
-		ShortDescription: "Second user",
-		Role:             "user",
-	},
+	GoogleSub         string    `json:"googleSub"`
+	Name              string    `json:"name" binding:"required"`
+	Birthdate         time.Time `json:"birthdate" binding:"required" example:"2006-01-02T15:04:05Z"`
+	Gender            string    `json:"gender" binding:"required"`
+	ProfilePictureURL string    `json:"profilePictureUrl"`
+	Description       string    `json:"description"`
+	ShortDescription  string    `json:"shortDescription"`
+	Role              string    `json:"role" binding:"required" example:"User"`
 }
 
 var db, _ = models.DB()
@@ -70,13 +51,22 @@ func GetAllUsers(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Router /users/{id} [get]
 func GetUser(c *gin.Context) {
-	for _, u := range mockUsers {
-		if strconv.Itoa(int(u.ID)) == c.Param("id") {
-			c.JSON(http.StatusOK, u)
-			return
-		}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
+		return
 	}
-	c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "user not found"})
+	var u models.User
+	res := db.Find(&u, id)
+	if res.Error != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: res.Error.Error()})
+		return
+	}
+	if res.RowsAffected != 1 {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "user with provided id not found"})
+		return
+	}
+	c.JSON(http.StatusOK, u)
 }
 
 // CreateUser is the handler for POST requests to /users
