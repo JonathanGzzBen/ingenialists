@@ -8,7 +8,10 @@ import (
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
+
+type UsersController struct{ db *gorm.DB }
 
 type CreateUserDTO struct {
 	GoogleSub         string    `json:"googleSub"`
@@ -21,7 +24,11 @@ type CreateUserDTO struct {
 	Role              string    `json:"role" binding:"required" example:"User"`
 }
 
-var db, _ = models.DB()
+func NewUsersController(db *gorm.DB) UsersController {
+	return UsersController{
+		db: db,
+	}
+}
 
 // GetAllUsers is the handler for GET requests to /users
 // 	@ID GetAllUsers
@@ -31,9 +38,9 @@ var db, _ = models.DB()
 // 	@Success 200 {array} models.User
 // 	@Failure 500 {object} models.APIError
 // 	@Router /users [get]
-func GetAllUsers(c *gin.Context) {
+func (uc *UsersController) GetAllUsers(c *gin.Context) {
 	var users models.User
-	result := db.Find(&users)
+	result := uc.db.Find(&users)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not connect to database"})
 		return
@@ -50,14 +57,14 @@ func GetAllUsers(c *gin.Context) {
 // 	@Success 200 {object} models.User
 // 	@Failure 404 {object} models.APIError
 // 	@Router /users/{id} [get]
-func GetUser(c *gin.Context) {
+func (uc *UsersController) GetUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
 	var u models.User
-	res := db.Find(&u, id)
+	res := uc.db.Find(&u, id)
 	if res.Error != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: res.Error.Error()})
 		return
@@ -78,7 +85,7 @@ func GetUser(c *gin.Context) {
 // 	@Success 200 {object} models.User
 // 	@Failure 400 {object} models.APIError
 // 	@Router /users [post]
-func CreateUser(c *gin.Context) {
+func (uc *UsersController) CreateUser(c *gin.Context) {
 	var cu CreateUserDTO
 
 	if err := c.ShouldBindJSON(&cu); err != nil {
@@ -92,7 +99,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	db.Create(&u)
+	uc.db.Create(&u)
 	c.JSON(http.StatusOK, u)
 }
 
