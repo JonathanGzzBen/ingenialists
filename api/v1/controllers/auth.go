@@ -89,7 +89,6 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	json.NewDecoder(response.Body).Decode(&uinfo)
 
 	var u models.User
-	u.GoogleAccessToken = token.AccessToken
 	res := ac.db.Where("google_sub = ? ", uinfo.Sub).First(&u)
 	// If there is no user with that sub, create one
 	if res.Error != nil {
@@ -104,7 +103,10 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 		ac.db.Save(&u)
 		c.JSON(http.StatusOK, u)
 		return
+	} else {
+		// If user found with that sub, update refresh token return it
+		u.GoogleAccessToken = token.AccessToken
+		ac.db.Save(&u)
+		c.JSON(http.StatusOK, u)
 	}
-	// If user found with that sub, return it
-	c.JSON(http.StatusOK, u)
 }

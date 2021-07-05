@@ -8,7 +8,7 @@ import (
 
 type User struct {
 	ID                 uint      `json:"id"`
-	GoogleSub          string    `json:"googleSub"`
+	GoogleSub          string    `json:"-"`
 	GoogleRefreshToken string    `json:"-"`
 	GoogleAccessToken  string    `json:"-"`
 	Name               string    `json:"name"`
