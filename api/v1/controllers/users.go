@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
@@ -12,16 +10,6 @@ import (
 )
 
 type UsersController struct{ db *gorm.DB }
-
-type CreateUserDTO struct {
-	Name              string    `json:"name" binding:"required"`
-	Birthdate         time.Time `json:"birthdate" example:"2006-01-02T15:04:05Z"`
-	Gender            string    `json:"gender" example:"Male"`
-	ProfilePictureURL string    `json:"profilePictureUrl"`
-	Description       string    `json:"description"`
-	ShortDescription  string    `json:"shortDescription"`
-	Role              string    `json:"role" example:"User"`
-}
 
 func NewUsersController(db *gorm.DB) UsersController {
 	return UsersController{
@@ -73,44 +61,4 @@ func (uc *UsersController) GetUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, u)
-}
-
-// CreateUser is the handler for POST requests to /users
-// 	@ID CreateUser
-// 	@Summary Create user
-// 	@Description Creates a new user.
-// 	@Tags users
-// 	@Param user body CreateUserDTO true "User"
-// 	@Success 200 {object} models.User
-// 	@Failure 400 {object} models.APIError
-// 	@Router /users [post]
-func (uc *UsersController) CreateUser(c *gin.Context) {
-	var cu CreateUserDTO
-
-	if err := c.ShouldBindJSON(&cu); err != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid create user request: " + err.Error()})
-		return
-	}
-
-	u, err := parseCreateUserDTO(cu)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "could not parse user: " + err.Error()})
-		return
-	}
-
-	uc.db.Create(&u)
-	c.JSON(http.StatusOK, u)
-}
-
-func parseCreateUserDTO(cu CreateUserDTO) (*models.User, error) {
-	cuJSON, err := json.Marshal(cu)
-	if err != nil {
-		return nil, err
-	}
-	var u models.User
-	err = json.Unmarshal(cuJSON, &u)
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
 }

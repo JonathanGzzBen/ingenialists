@@ -53,7 +53,6 @@ func main() {
 		{
 			ur.GET("/", uc.GetAllUsers)
 			ur.GET("/:id", uc.GetUser)
-			ur.POST("/", uc.CreateUser)
 		}
 		ac := controllers.NewAuthController(db)
 		ar := v1.Group("/auth")
