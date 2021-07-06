@@ -37,14 +37,14 @@ definitions:
     type: object
   models.User:
     properties:
+      accessToken:
+        type: string
       birthdate:
         example: "2006-01-02T15:04:05Z"
         type: string
       description:
         type: string
       gender:
-        type: string
-      googleSub:
         type: string
       id:
         type: integer
@@ -56,8 +56,6 @@ definitions:
         example: User
         type: string
       shortDescription:
-        type: string
-      token:
         type: string
     type: object
 host: localhost:8080
@@ -73,16 +71,20 @@ info:
   title: Ingenialists API V1
   version: 0.1.0
 paths:
-  /auth/google-login:
+  /auth:
     get:
-      description: Logins with Google Oauth2
-      operationId: LoginGoogle
+      operationId: GetCurrentUser
       responses:
-        "302":
-          description: Found
+        "200":
+          description: OK
           schema:
             type: string
-      summary: Login with Google
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       tags:
       - auth
   /users:
@@ -147,4 +149,18 @@ paths:
       summary: Get user
       tags:
       - users
+securityDefinitions:
+  AccessToken:
+    in: header
+    name: AccessToken
+    type: apiKey
+  OAuth2AccessCode:
+    authorizationUrl: /v1/auth/google-login
+    flow: accessCode
+    scopes:
+      email: ' Grant access to email'
+      openid: ' Allow identifying account'
+      profile: ' Grant access to profile'
+    tokenUrl: /v1/auth/google-callback
+    type: oauth2
 swagger: "2.0"

@@ -24,6 +24,17 @@ import (
 //
 // @host localhost:8080
 // @BasePath /v1
+//
+// @securityDefinitions.apikey AccessToken
+// @in header
+// @name AccessToken
+//
+// @securitydefinitions.oauth2.accessCode OAuth2AccessCode
+// @tokenUrl /v1/auth/google-callback
+// @authorizationUrl /v1/auth/google-login
+// @scope.openid Allow identifying account
+// @scope.profile Grant access to profile
+// @scope.email Grant access to email
 func main() {
 
 	// Initialize database
@@ -47,6 +58,7 @@ func main() {
 		ac := controllers.NewAuthController(db)
 		ar := v1.Group("/auth")
 		{
+			ar.GET("/", ac.GetCurrentUser)
 			ar.GET("/google-login", ac.LoginGoogle)
 			ar.GET("/google-callback", ac.GoogleCallback)
 		}

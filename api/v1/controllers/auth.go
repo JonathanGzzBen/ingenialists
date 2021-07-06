@@ -53,19 +53,34 @@ func NewAuthController(db *gorm.DB) AuthController {
 	return ac
 }
 
-// LoginGoogle is the handler for GET requests to /auth/google-login
-// 	@ID LoginGoogle
-// 	@Summary Login with Google
-// 	@Description Logins with Google Oauth2
+// CurrentUser is the handler for GET requests to /auth
+// 	@ID GetCurrentUser
 // 	@Tags auth
-// 	@Success 302 {object} string
-// 	@Router /auth/google-login [get]
+// 	@Success 200 {object} string
+// 	@Failure 403 {object} models.APIError
+// 	@Security AccessToken
+// 	@Router /auth [get]
+func (ac *AuthController) GetCurrentUser(c *gin.Context) {
+	at := c.GetHeader("AccessToken")
+	u, err := ac.userByAccessToken(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "invalid access token"})
+		return
+	}
+	c.JSON(http.StatusOK, u)
+}
+
+// LoginGoogle is the handler for GET requests to /auth/google-login
+// it's the entryway for Google OAuth2 flow.
 func (ac *AuthController) LoginGoogle(c *gin.Context) {
 	url := googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-// LoginGoogle is the handler for GET requests to /auth/google-login
+// GoogleCallback is the handler for GET requests to /auth/google-callback
+// it's part of Google OAuth2 flow.
+//
+// Returns user's token.
 func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	if c.Request.URL.Query().Get("state") != state {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "state did not match"})
@@ -96,17 +111,36 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 			GoogleSub:          uinfo.Sub,
 			GoogleRefreshToken: token.RefreshToken,
 			GoogleAccessToken:  token.AccessToken,
-			Token:              uuid.New(),
+			AccessToken:        uuid.New(),
 			ProfilePictureURL:  uinfo.Picture,
 			Name:               uinfo.Name,
 		}
 		ac.db.Save(&u)
-		c.JSON(http.StatusOK, u)
+		ts, err := u.AccessToken.MarshalText()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "cannot get user token"})
+			return
+		}
+		c.JSON(http.StatusOK, string(ts))
 		return
 	} else {
 		// If user found with that sub, update refresh token return it
 		u.GoogleAccessToken = token.AccessToken
 		ac.db.Save(&u)
-		c.JSON(http.StatusOK, u)
+		ts, err := u.AccessToken.MarshalText()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "cannot get user token"})
+			return
+		}
+		c.String(http.StatusOK, string(ts))
 	}
+}
+
+func (ac *AuthController) userByAccessToken(at string) (*models.User, error) {
+	var u *models.User
+	res := ac.db.First(&u, "access_token = ?", at)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return u, nil
 }

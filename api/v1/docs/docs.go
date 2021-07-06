@@ -32,19 +32,28 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/google-login": {
+        "/auth": {
             "get": {
-                "description": "Logins with Google Oauth2",
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login with Google",
-                "operationId": "LoginGoogle",
+                "operationId": "GetCurrentUser",
                 "responses": {
-                    "302": {
-                        "description": "Found",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
                         }
                     }
                 }
@@ -198,6 +207,9 @@ var doc = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
                 "birthdate": {
                     "type": "string",
                     "example": "2006-01-02T15:04:05Z"
@@ -206,9 +218,6 @@ var doc = `{
                     "type": "string"
                 },
                 "gender": {
-                    "type": "string"
-                },
-                "googleSub": {
                     "type": "string"
                 },
                 "id": {
@@ -226,10 +235,25 @@ var doc = `{
                 },
                 "shortDescription": {
                     "type": "string"
-                },
-                "token": {
-                    "type": "string"
                 }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "AccessToken": {
+            "type": "apiKey",
+            "name": "AccessToken",
+            "in": "header"
+        },
+        "OAuth2AccessCode": {
+            "type": "oauth2",
+            "flow": "accessCode",
+            "authorizationUrl": "/v1/auth/google-login",
+            "tokenUrl": "/v1/auth/google-callback",
+            "scopes": {
+                "email": " Grant access to email",
+                "openid": " Allow identifying account",
+                "profile": " Grant access to profile"
             }
         }
     }
