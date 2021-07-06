@@ -157,10 +157,7 @@ var doc = `{
         "controllers.CreateUserDTO": {
             "type": "object",
             "required": [
-                "birthdate",
-                "gender",
-                "name",
-                "role"
+                "name"
             ],
             "properties": {
                 "birthdate": {
@@ -171,10 +168,8 @@ var doc = `{
                     "type": "string"
                 },
                 "gender": {
-                    "type": "string"
-                },
-                "googleSub": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Male"
                 },
                 "name": {
                     "type": "string"

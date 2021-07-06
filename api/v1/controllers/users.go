@@ -14,14 +14,13 @@ import (
 type UsersController struct{ db *gorm.DB }
 
 type CreateUserDTO struct {
-	GoogleSub         string    `json:"googleSub"`
 	Name              string    `json:"name" binding:"required"`
-	Birthdate         time.Time `json:"birthdate" binding:"required" example:"2006-01-02T15:04:05Z"`
-	Gender            string    `json:"gender" binding:"required"`
+	Birthdate         time.Time `json:"birthdate" example:"2006-01-02T15:04:05Z"`
+	Gender            string    `json:"gender" example:"Male"`
 	ProfilePictureURL string    `json:"profilePictureUrl"`
 	Description       string    `json:"description"`
 	ShortDescription  string    `json:"shortDescription"`
-	Role              string    `json:"role" binding:"required" example:"User"`
+	Role              string    `json:"role" example:"User"`
 }
 
 func NewUsersController(db *gorm.DB) UsersController {

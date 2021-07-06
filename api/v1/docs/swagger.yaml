@@ -8,8 +8,7 @@ definitions:
       description:
         type: string
       gender:
-        type: string
-      googleSub:
+        example: Male
         type: string
       name:
         type: string
@@ -21,10 +20,7 @@ definitions:
       shortDescription:
         type: string
     required:
-    - birthdate
-    - gender
     - name
-    - role
     type: object
   models.APIError:
     properties:
