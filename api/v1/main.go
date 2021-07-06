@@ -64,8 +64,8 @@ func main() {
 		}
 	}
 
-	swaggerUrl := ginSwagger.URL("http://localhost:8080/swagger/doc.json")
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
+	swaggerUrl := ginSwagger.URL("http://localhost:8080/v1/swagger/doc.json")
+	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	r.Run()
 }
