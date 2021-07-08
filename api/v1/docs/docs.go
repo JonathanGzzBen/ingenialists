@@ -213,9 +213,6 @@ var doc = `{
         "models.User": {
             "type": "object",
             "properties": {
-                "accessToken": {
-                    "type": "string"
-                },
                 "birthdate": {
                     "type": "string",
                     "example": "2006-01-02T15:04:05Z"

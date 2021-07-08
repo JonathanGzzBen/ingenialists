@@ -3,11 +3,12 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
 	"gorm.io/gorm"
@@ -96,65 +97,69 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to exchange token: " + err.Error()})
 		return
 	}
-	response, err := http.Get(googleUserInfoURL + "?access_token=" + token.AccessToken)
+
+	uinfo, err := userInfoByAccessToken(token.AccessToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to get user info: " + err.Error()})
 		return
 	}
-	defer response.Body.Close()
-	var uinfo googleUserInfoResponse
-	json.NewDecoder(response.Body).Decode(&uinfo)
 
 	var u models.User
 	res := ac.db.Where("google_sub = ? ", uinfo.Sub).First(&u)
 	// If there is no user with that sub, create one
 	if res.Error != nil {
 		u = models.User{
-			GoogleSub:          uinfo.Sub,
-			GoogleRefreshToken: token.RefreshToken,
-			GoogleAccessToken:  token.AccessToken,
-			AccessToken:        uuid.New(),
-			ProfilePictureURL:  uinfo.Picture,
-			Name:               uinfo.Name,
+			GoogleSub:         uinfo.Sub,
+			ProfilePictureURL: uinfo.Picture,
+			Name:              uinfo.Name,
 		}
 		ac.db.Save(&u)
-		ts, err := u.AccessToken.MarshalText()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "cannot get user token"})
-			return
-		}
-		c.JSON(http.StatusOK, string(ts))
-		return
-	} else {
-		// If user found with that sub, update refresh token return it
-		u.GoogleAccessToken = token.AccessToken
-		ac.db.Save(&u)
-		ts, err := u.AccessToken.MarshalText()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "cannot get user token"})
-			return
-		}
-		c.String(http.StatusOK, string(ts))
 	}
+
+	c.JSON(http.StatusOK, token)
 }
 
 func (ac *AuthController) userByAccessToken(at string) (*models.User, error) {
+	ui, err := userInfoByAccessToken(at)
+	if err != nil {
+		return nil, err
+	}
 	var u *models.User
-	res := ac.db.First(&u, "access_token = ?", at)
+	res := ac.db.Where("google_sub = ? ", ui.Sub).First(&u)
 	if res.Error != nil {
-		return nil, res.Error
+		return nil, err
 	}
 	return u, nil
 }
 
-func getAuthenticatedUser(accessToken string) (*models.User, error) {
-	// Get AuthenticatedUser
-	req, err := http.NewRequest("GET", "/v1/auth", nil)
+// userInfoByAccessToken returns userInfo
+func userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
+	response, err := http.Get(googleUserInfoURL + "?access_token=" + at)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("AccessToken", accessToken)
-	client := http.Client{}
+	defer response.Body.Close()
+	var uinfo *googleUserInfoResponse
+	json.NewDecoder(response.Body).Decode(&uinfo)
+	return uinfo, nil
+}
+
+func getAuthenticatedUser(accessToken string) (*models.User, error) {
+	// Get AuthenticatedUser
+	var baseURL string
+	switch env := os.Getenv("ING_ENVIRONMENT"); env {
+	case "development":
+		baseURL = os.Getenv("ING_HOSTNAME") + os.Getenv("ING_PORT")
+	default:
+		baseURL = os.Getenv("ING_HOSTNAME")
+	}
+	req, err := http.NewRequest("GET", baseURL+"/v1/auth", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add(accessTokenName, accessToken)
+	log.Println("Access token: ", accessToken)
+	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err

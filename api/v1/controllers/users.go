@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -102,15 +101,9 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "id does not match authenticated user"})
 		return
 	}
-
-	var uuDTO *UpdateUserDTO
-	if err := c.ShouldBindJSON(uuDTO); err != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "invalid user"})
-		return
-	}
-	uu, err := parseUpdateUserDTO(uuDTO)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "invalid user"})
+	var uu UpdateUserDTO
+	if err := c.ShouldBindJSON(&uu); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "invalid update user: " + err.Error()})
 		return
 	}
 	var u models.User
@@ -124,21 +117,8 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 	u.Role = uu.Role
 	res := uc.db.Save(&u)
 	if res.Error != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "invalid user"})
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, u)
-}
-
-func parseUpdateUserDTO(uc *UpdateUserDTO) (*models.User, error) {
-	ucJSON, err := json.Marshal(uc)
-	if err != nil {
-		return nil, err
-	}
-	var u *models.User
-	err = json.Unmarshal(ucJSON, u)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
 }

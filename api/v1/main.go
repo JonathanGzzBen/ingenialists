@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 
@@ -64,8 +66,14 @@ func main() {
 		}
 	}
 
-	swaggerUrl := ginSwagger.URL("http://localhost:8080/v1/swagger/doc.json")
+	godotenv.Load(".env")
+
+	swaggerUrl := ginSwagger.URL(os.Getenv("ING_ADDRESS") + os.Getenv("ING_PORT") + "/v1/swagger/doc.json")
 	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
-	r.Run()
+	if os.Getenv("ING_ENVIRONMENT") == "development" {
+		r.Run(os.Getenv("ING_PORT"))
+	} else {
+		r.Run(os.Getenv("ING_ADDRESS"))
+	}
 }
