@@ -1,6 +1,6 @@
 basePath: /v1
 definitions:
-  controllers.CreateUserDTO:
+  controllers.UpdateUserDTO:
     properties:
       birthdate:
         example: "2006-01-02T15:04:05Z"
@@ -8,7 +8,6 @@ definitions:
       description:
         type: string
       gender:
-        example: Male
         type: string
       name:
         type: string
@@ -101,28 +100,6 @@ paths:
       summary: Get all users
       tags:
       - users
-    post:
-      description: Creates a new user.
-      operationId: CreateUser
-      parameters:
-      - description: User
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.CreateUserDTO'
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.User'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.APIError'
-      summary: Create user
-      tags:
-      - users
   /users/{id}:
     get:
       description: Get user with matching ID.
@@ -143,6 +120,35 @@ paths:
           schema:
             $ref: '#/definitions/models.APIError'
       summary: Get user
+      tags:
+      - users
+    put:
+      description: Update matching user with provided data.
+      operationId: UpdateUser
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateUserDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
+      summary: Update user
       tags:
       - users
 securityDefinitions:

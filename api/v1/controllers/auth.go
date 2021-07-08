@@ -29,6 +29,8 @@ var (
 		RedirectURL:  googleCallbackURL,
 		Scopes:       []string{"openid", "profile", "email"},
 	}
+
+	accessTokenName = "AccessToken"
 )
 
 type AuthController struct {
@@ -61,7 +63,7 @@ func NewAuthController(db *gorm.DB) AuthController {
 // 	@Security AccessToken
 // 	@Router /auth [get]
 func (ac *AuthController) GetCurrentUser(c *gin.Context) {
-	at := c.GetHeader("AccessToken")
+	at := c.GetHeader(accessTokenName)
 	u, err := ac.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "invalid access token"})
@@ -143,4 +145,25 @@ func (ac *AuthController) userByAccessToken(at string) (*models.User, error) {
 		return nil, res.Error
 	}
 	return u, nil
+}
+
+func getAuthenticatedUser(accessToken string) (*models.User, error) {
+	// Get AuthenticatedUser
+	req, err := http.NewRequest("GET", "/v1/auth", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("AccessToken", accessToken)
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	var au models.User
+	err = json.NewDecoder(res.Body).Decode(&au)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	return &au, nil
 }

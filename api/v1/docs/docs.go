@@ -84,39 +84,6 @@ var doc = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Creates a new user.",
-                "tags": [
-                    "users"
-                ],
-                "summary": "Create user",
-                "operationId": "CreateUser",
-                "parameters": [
-                    {
-                        "description": "User",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.CreateUserDTO"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.APIError"
-                        }
-                    }
-                }
             }
         },
         "/users/{id}": {
@@ -150,11 +117,56 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Update matching user with provided data.",
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user",
+                "operationId": "UpdateUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateUserDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
-        "controllers.CreateUserDTO": {
+        "controllers.UpdateUserDTO": {
             "type": "object",
             "required": [
                 "name"
@@ -168,8 +180,7 @@ var doc = `{
                     "type": "string"
                 },
                 "gender": {
-                    "type": "string",
-                    "example": "Male"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
