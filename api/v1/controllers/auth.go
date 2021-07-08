@@ -17,8 +17,8 @@ import (
 var (
 	state = "ingenialists"
 
-	googleClientID     = "508942453082-n2hslfnvv37kvebfcqp0ii33idc7tv4s.apps.googleusercontent.com"
-	googleClientSecret = "MB5vDo99iMvLv3gRU4xLfi1C"
+	googleClientID     = os.Getenv("ING_GOOGLE_CLIENT_ID")
+	googleClientSecret = os.Getenv("ING_GOOGLE_CLIENT_SECRET")
 	googleUserInfoURL  = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 	googleCallbackURL = "http://127.0.0.1:8080/v1/auth/google-callback"
