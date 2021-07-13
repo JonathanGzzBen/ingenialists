@@ -75,19 +75,24 @@ func main() {
 	}
 
 	godotenv.Load(".env")
-	address := os.Getenv("ING_ADDRESS")
-	port := os.Getenv("ING_PORT")
+	// hostname is used by multiple controllers
+	// to make requests to authentication controller
+	hostname := os.Getenv("ING_HOSTNAME")
 
-	if len(address) == 0 || len(port) == 0 {
-		panic("Environment variables missing")
+	if len(hostname) == 0 {
+		panic("Environment variable ING_HOSTNAME missing")
 	}
 
-	swaggerUrl := ginSwagger.URL(address + port + "/v1/swagger/doc.json")
+	swaggerUrl := ginSwagger.URL(hostname + "/v1/swagger/doc.json")
 	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	if os.Getenv("ING_ENVIRONMENT") == "development" {
-		r.Run(os.Getenv("ING_PORT"))
+		port := os.Getenv("ING_PORT")
+		if len(port) == 0 {
+			panic("Environment variable ING_PORT missing")
+		}
+		r.Run(port)
 	} else {
-		r.Run(os.Getenv("ING_ADDRESS"))
+		r.Run()
 	}
 }
