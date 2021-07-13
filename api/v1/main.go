@@ -45,6 +45,7 @@ func main() {
 		log.Panic("could not open database file")
 	}
 	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.Category{})
 
 	r := gin.Default()
 
@@ -64,6 +65,13 @@ func main() {
 			ar.GET("/google-login", ac.LoginGoogle)
 			ar.GET("/google-callback", ac.GoogleCallback)
 		}
+		cc := controllers.NewCategoriesController(db)
+		cr := v1.Group("/categories")
+		{
+			cr.GET("/", cc.GetAllCategories)
+			cr.POST("/", cc.CreateCategory)
+		}
+
 	}
 
 	godotenv.Load(".env")

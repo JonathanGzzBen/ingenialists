@@ -1,5 +1,12 @@
 basePath: /v1
 definitions:
+  controllers.CreateCategoryDTO:
+    properties:
+      imageUrl:
+        type: string
+      name:
+        type: string
+    type: object
   controllers.UpdateUserDTO:
     properties:
       birthdate:
@@ -28,6 +35,15 @@ definitions:
         type: integer
       message:
         example: status bad request
+        type: string
+    type: object
+  models.Category:
+    properties:
+      id:
+        type: integer
+      imageUrl:
+        type: string
+      name:
         type: string
     type: object
   models.User:
@@ -80,6 +96,50 @@ paths:
       - AccessToken: []
       tags:
       - auth
+  /categories:
+    get:
+      description: Get all registered categories.
+      operationId: GetAllCategories
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Get all categories
+      tags:
+      - categories
+    post:
+      description: Register a new category.
+      operationId: CreateCategory
+      parameters:
+      - description: Category
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateCategoryDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Create category
+      tags:
+      - categories
   /users:
     get:
       description: Get all registered users.
