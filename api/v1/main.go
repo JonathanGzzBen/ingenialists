@@ -67,8 +67,14 @@ func main() {
 	}
 
 	godotenv.Load(".env")
+	address := os.Getenv("ING_ADDRESS")
+	port := os.Getenv("ING_PORT")
 
-	swaggerUrl := ginSwagger.URL(os.Getenv("ING_ADDRESS") + os.Getenv("ING_PORT") + "/v1/swagger/doc.json")
+	if len(address) == 0 || len(port) == 0 {
+		panic("Environment variables missing")
+	}
+
+	swaggerUrl := ginSwagger.URL(address + port + "/v1/swagger/doc.json")
 	v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	if os.Getenv("ING_ENVIRONMENT") == "development" {
