@@ -46,6 +46,7 @@ func main() {
 	}
 	db.AutoMigrate(&models.User{})
 	db.AutoMigrate(&models.Category{})
+	db.AutoMigrate(&models.Article{})
 
 	r := gin.Default()
 
@@ -72,6 +73,14 @@ func main() {
 			cr.GET("/:id", cc.GetCategory)
 			cr.POST("/", cc.CreateCategory)
 			cr.PUT("/:id", cc.UpdateCategory)
+		}
+		arc := controllers.NewArticlesController(db)
+		arr := v1.Group("/articles")
+		{
+			arr.GET("/", arc.GetAllArticles)
+			arr.GET("/:id", arc.GetArticle)
+			arr.POST("/", arc.CreateArticle)
+			arr.PUT("/:id", arc.UpdateArticle)
 		}
 	}
 

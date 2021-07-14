@@ -1,10 +1,38 @@
 basePath: /v1
 definitions:
+  controllers.CreateArticleDTO:
+    properties:
+      body:
+        type: string
+      categoryId:
+        type: integer
+      imageUrl:
+        type: string
+      tags:
+        type: string
+      title:
+        type: string
+      userId:
+        type: integer
+    type: object
   controllers.CreateCategoryDTO:
     properties:
       imageUrl:
         type: string
       name:
+        type: string
+    type: object
+  controllers.UpdateArticleDTO:
+    properties:
+      body:
+        type: string
+      categoryId:
+        type: integer
+      imageUrl:
+        type: string
+      tags:
+        type: string
+      title:
         type: string
     type: object
   controllers.UpdateCategoryDTO:
@@ -43,6 +71,32 @@ definitions:
       message:
         example: status bad request
         type: string
+    type: object
+  models.Article:
+    properties:
+      body:
+        type: string
+      category:
+        $ref: '#/definitions/models.Category'
+      categoryId:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: integer
+      imageUrl:
+        type: string
+      tags:
+        description: Tags is a comma separated string of tags
+        type: string
+      title:
+        type: string
+      updtedAt:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+      userId:
+        type: integer
     type: object
   models.Category:
     properties:
@@ -87,6 +141,111 @@ info:
   title: Ingenialists API V1
   version: 0.1.0
 paths:
+  /articles:
+    get:
+      description: Get all registered articles.
+      operationId: GetAllArticles
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Article'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Get all articles
+      tags:
+      - articles
+    post:
+      description: Register a new article.
+      operationId: CreateArticle
+      parameters:
+      - description: Article
+        in: body
+        name: article
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateArticleDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Create article
+      tags:
+      - articles
+  /articles/{id}:
+    get:
+      description: Get article with matching ID.
+      operationId: GetArticle
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Article'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Get article
+      tags:
+      - articles
+    put:
+      description: Updates a registered article.
+      operationId: UpdateArticle
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Article
+        in: body
+        name: article
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateArticleDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Article'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Update article
+      tags:
+      - articles
   /auth:
     get:
       operationId: GetCurrentUser
