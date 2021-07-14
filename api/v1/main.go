@@ -71,6 +71,7 @@ func main() {
 			cr.GET("/", cc.GetAllCategories)
 			cr.GET("/:id", cc.GetCategory)
 			cr.POST("/", cc.CreateCategory)
+			cr.PUT("/:id", cc.UpdateCategory)
 		}
 	}
 

@@ -16,6 +16,11 @@ type CreateCategoryDTO struct {
 	ImageURL string `json:"imageUrl"`
 }
 
+type UpdateCategoryDTO struct {
+	Name     string `json:"name"`
+	ImageURL string `json:"imageUrl"`
+}
+
 // NewCategoriesController returns a new controller for categories
 func NewCategoriesController(db *gorm.DB) CategoriesController {
 	return CategoriesController{
@@ -89,6 +94,51 @@ func (cc *CategoriesController) CreateCategory(c *gin.Context) {
 	result := cc.db.Create(&category)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create category:" + result.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, category)
+}
+
+// UpdateCategory is the handler for PUT requests to /categories
+// 	@ID UpdateCategory
+// 	@Summary Update category
+// 	@Description Updates a registered category.
+// 	@Tags categories
+// 	@Param id path int true "Category ID"
+// 	@Param category body UpdateCategoryDTO true "Category"
+// 	@Success 200 {object} models.Category
+// 	@Failure 400 {object} models.APIError
+// 	@Failure 404 {object} models.APIError
+// 	@Failure 500 {object} models.APIError
+// 	@Router /categories/{id} [put]
+func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
+		return
+	}
+	var category models.Category
+	res := cc.db.Find(&category, id)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
+		return
+	}
+	if res.RowsAffected != 1 {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category with provided id not found"})
+		return
+	}
+
+	var cu UpdateCategoryDTO
+	if err := c.ShouldBindJSON(&cu); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid category: " + err.Error()})
+		return
+	}
+
+	category.Name = cu.Name
+	category.ImageURL = cu.ImageURL
+	res = cc.db.Save(&category)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not save updated category: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, category)
