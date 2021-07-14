@@ -140,6 +140,28 @@ paths:
       summary: Create category
       tags:
       - categories
+  /categories/{id}:
+    get:
+      description: Get category with matching ID.
+      operationId: GetCategory
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.APIError'
+      summary: Get category
+      tags:
+      - categories
   /users:
     get:
       description: Get all registered users.

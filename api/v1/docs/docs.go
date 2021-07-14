@@ -125,6 +125,39 @@ var doc = `{
                 }
             }
         },
+        "/categories/{id}": {
+            "get": {
+                "description": "Get category with matching ID.",
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get category",
+                "operationId": "GetCategory",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Get all registered users.",

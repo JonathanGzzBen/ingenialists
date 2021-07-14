@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,35 @@ func (cc *CategoriesController) GetAllCategories(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, categories)
+}
+
+// GetCategory is the handler for GET requests to /categories/:id
+// 	@ID GetCategory
+// 	@Summary Get category
+// 	@Description Get category with matching ID.
+// 	@Tags categories
+// 	@Param id path int true "Category ID"
+// 	@Success 200 {object} models.Category
+// 	@Failure 404 {object} models.APIError
+// 	@Failure 500 {object} models.APIError
+// 	@Router /categories/{id} [get]
+func (cc CategoriesController) GetCategory(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
+		return
+	}
+	var category models.Category
+	res := cc.db.Find(&category, id)
+	if res.Error == nil && res.RowsAffected != 1 {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
+		return
+	}
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not find category"})
+		return
+	}
+	c.JSON(http.StatusOK, category)
 }
 
 // CreateCategory is the handler for POST requests to /categories

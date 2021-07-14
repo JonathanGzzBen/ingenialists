@@ -69,9 +69,9 @@ func main() {
 		cr := v1.Group("/categories")
 		{
 			cr.GET("/", cc.GetAllCategories)
+			cr.GET("/:id", cc.GetCategory)
 			cr.POST("/", cc.CreateCategory)
 		}
-
 	}
 
 	// hostname is used by multiple controllers
