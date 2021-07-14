@@ -17,8 +17,8 @@ import (
 var (
 	state = "ingenialists"
 
-	googleClientID     = os.Getenv("ING_GOOGLE_CLIENT_ID")
-	googleClientSecret = os.Getenv("ING_GOOGLE_CLIENT_SECRET")
+	googleClientID     string
+	googleClientSecret string
 	googleUserInfoURL  = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 	googleCallbackURL = "http://127.0.0.1:8080/v1/auth/google-callback"
@@ -50,6 +50,11 @@ type googleUserInfoResponse struct {
 }
 
 func NewAuthController(db *gorm.DB) AuthController {
+	googleClientID = os.Getenv("ING_GOOGLE_CLIENT_ID")
+	googleClientSecret = os.Getenv("ING_GOOGLE_CLIENT_SECRET")
+	if len(googleClientID) == 0 || len(googleClientSecret) == 0 {
+		panic("Environment variables ING_GOOGLE_CLIENT_ID or ING_CLIENT_SECRET missing")
+	}
 	ac := AuthController{
 		db: db,
 	}

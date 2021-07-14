@@ -38,7 +38,7 @@ import (
 // @scope.profile Grant access to profile
 // @scope.email Grant access to email
 func main() {
-
+	godotenv.Load(".env")
 	// Initialize database
 	db, err := models.DB()
 	if err != nil {
@@ -74,7 +74,6 @@ func main() {
 
 	}
 
-	godotenv.Load(".env")
 	// hostname is used by multiple controllers
 	// to make requests to authentication controller
 	hostname := os.Getenv("ING_HOSTNAME")
