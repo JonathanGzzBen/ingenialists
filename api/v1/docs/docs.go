@@ -232,8 +232,8 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "Accepted",
+                    "204": {
+                        "description": "No Content",
                         "schema": {
                             "type": "string"
                         }
