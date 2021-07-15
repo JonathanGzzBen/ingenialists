@@ -192,6 +192,37 @@ paths:
       tags:
       - articles
   /articles/{id}:
+    delete:
+      description: Delete article with matching ID.
+      operationId: DeleteArticle
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
+      summary: Delete article
+      tags:
+      - articles
     get:
       description: Get article with matching ID.
       operationId: GetArticle

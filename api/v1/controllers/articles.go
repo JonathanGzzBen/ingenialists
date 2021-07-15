@@ -198,3 +198,50 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, article)
 }
+
+// DeleteArticle is the handler for DELETE requests to /articles/:id
+// 	@ID DeleteArticle
+// 	@Summary Delete article
+// 	@Description Delete article with matching ID.
+// 	@Tags articles
+// 	@Param id path int true "Article ID"
+// 	@Security AccessToken
+// 	@Success 204 {object} string
+// 	@Failure 403 {object} models.APIError
+// 	@Failure 404 {object} models.APIError
+// 	@Failure 500 {object} models.APIError
+// 	@Router /articles/{id} [delete]
+func (ac *ArticlesController) DeleteArticle(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	au, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to delete an article"})
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
+		return
+	}
+
+	var article models.Article
+	res := ac.db.Find(&article, id)
+	if res.Error != nil || res.RowsAffected != 1 {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article not found"})
+		return
+	}
+
+	// If article doens't belong to authenticated user
+	// and authenticated user is not administrator
+	if !(article.UserID == au.ID || au.Role == models.RoleAdministrator) {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you are not authenticated as administrator or this article doesn't belong to you"})
+		return
+	}
+
+	res = ac.db.Delete(&article)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
+		return
+	}
+	c.String(http.StatusNoContent, "deleted")
+}

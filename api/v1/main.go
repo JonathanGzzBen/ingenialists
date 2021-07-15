@@ -81,6 +81,7 @@ func main() {
 			arr.GET("/:id", arc.GetArticle)
 			arr.POST("/", arc.CreateArticle)
 			arr.PUT("/:id", arc.UpdateArticle)
+			arr.DELETE("/:id", arc.DeleteArticle)
 		}
 	}
 
