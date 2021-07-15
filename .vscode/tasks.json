@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "Build API V1",
-      "command": "cd ${workspaceFolder}/api/v1 && go build -o ingenialists-api-v1",
+      "command": "./scripts/build_api_v1.sh",
       "type": "shell",
       "presentation": {
         "reveal": "silent"
@@ -16,7 +16,7 @@
     },
     {
       "label": "Update Swagger Docs V1",
-      "command": "cd ${workspaceFolder}/api/v1 && swag init",
+      "command": "./scripts/update_swagger_docs_v1.sh",
       "type": "shell",
       "presentation": {
         "reveal": "silent"
