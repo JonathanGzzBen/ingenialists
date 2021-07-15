@@ -2,6 +2,18 @@
 
 Website with reviews and analysis about various engineering topics.
 
+# How to run
+
+## API V1
+
+Copy example `.env` file and add your configurations to it:
+
+```shell
+cp .env.example .env
+```
+
+Use VS Code tasks or scripts in `scripts` directory to build application or documentation.
+
 # Contribute
 
 1. Fork this repository.
