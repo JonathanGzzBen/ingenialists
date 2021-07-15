@@ -20,16 +20,8 @@ var (
 	googleClientID     string
 	googleClientSecret string
 	googleUserInfoURL  = "https://www.googleapis.com/oauth2/v3/userinfo"
-
-	googleCallbackURL = "http://127.0.0.1:8080/v1/auth/google-callback"
-
-	googleConfig = oauth2.Config{
-		ClientID:     googleClientID,
-		ClientSecret: googleClientSecret,
-		Endpoint:     endpoints.Google,
-		RedirectURL:  googleCallbackURL,
-		Scopes:       []string{"openid", "profile", "email"},
-	}
+	googleCallbackURL  = "http://127.0.0.1:8080/v1/auth/google-callback"
+	googleConfig       oauth2.Config
 
 	accessTokenName = "AccessToken"
 )
@@ -52,6 +44,13 @@ type googleUserInfoResponse struct {
 func NewAuthController(db *gorm.DB) AuthController {
 	googleClientID = os.Getenv("ING_GOOGLE_CLIENT_ID")
 	googleClientSecret = os.Getenv("ING_GOOGLE_CLIENT_SECRET")
+	googleConfig = oauth2.Config{
+		ClientID:     googleClientID,
+		ClientSecret: googleClientSecret,
+		Endpoint:     endpoints.Google,
+		RedirectURL:  googleCallbackURL,
+		Scopes:       []string{"openid", "profile", "email"},
+	}
 	if len(googleClientID) == 0 || len(googleClientSecret) == 0 {
 		panic("Environment variables ING_GOOGLE_CLIENT_ID or ING_CLIENT_SECRET missing")
 	}
@@ -81,6 +80,8 @@ func (ac *AuthController) GetCurrentUser(c *gin.Context) {
 // LoginGoogle is the handler for GET requests to /auth/google-login
 // it's the entryway for Google OAuth2 flow.
 func (ac *AuthController) LoginGoogle(c *gin.Context) {
+	log.Println("Client ID: ", googleClientSecret)
+	log.Println("Client Secret: ", googleClientSecret)
 	url := googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
