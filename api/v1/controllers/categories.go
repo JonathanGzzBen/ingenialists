@@ -94,7 +94,7 @@ func (cc *CategoriesController) CreateCategory(c *gin.Context) {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create a category"})
 		return
 	}
-	if u.Role != "Administrator" {
+	if u.Role != models.RoleAdministrator {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only users with role Administrator can create categories"})
 		return
 	}
@@ -132,7 +132,7 @@ func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update a category"})
 		return
 	}
-	if u.Role != "Administrator" {
+	if u.Role != models.RoleAdministrator {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only users with role Administrator can update categories"})
 		return
 	}
