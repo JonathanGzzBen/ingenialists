@@ -44,6 +44,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Register a new article.",
                 "tags": [
                     "articles"
@@ -70,6 +75,12 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -122,6 +133,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Updates a registered article.",
                 "tags": [
                     "articles"
@@ -155,6 +171,12 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -228,6 +250,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Register a new category.",
                 "tags": [
                     "categories"
@@ -254,6 +281,12 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -306,6 +339,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Updates a registered category.",
                 "tags": [
                     "categories"
@@ -339,6 +377,12 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -554,7 +598,7 @@
                 },
                 "role": {
                     "type": "string",
-                    "example": "User"
+                    "example": "Reader"
                 },
                 "shortDescription": {
                     "type": "string"
@@ -651,7 +695,7 @@
                 },
                 "role": {
                     "type": "string",
-                    "example": "User"
+                    "example": "Reader"
                 },
                 "shortDescription": {
                     "type": "string"
