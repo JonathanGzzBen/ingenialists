@@ -9,7 +9,10 @@
         "reveal": "silent"
       },
       "group": "build",
-      "problemMatcher": "$go"
+      "problemMatcher": "$go",
+      "windows": {
+        "command": ".\\scripts\\build_api_v1.cmd"
+      }
     },
     {
       "label": "Update Swagger Docs V1",
@@ -19,7 +22,10 @@
         "reveal": "silent"
       },
       "group": "build",
-      "problemMatcher": "$go"
+      "problemMatcher": "$go",
+      "windows": {
+        "command": ".\\scripts\\update_swagger_docs_v1.cmd"
+      }
     }
   ]
 }
