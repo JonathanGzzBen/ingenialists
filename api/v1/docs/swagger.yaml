@@ -12,8 +12,6 @@ definitions:
         type: string
       title:
         type: string
-      userId:
-        type: integer
     type: object
   controllers.CreateCategoryDTO:
     properties:

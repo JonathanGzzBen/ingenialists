@@ -13,7 +13,6 @@ import (
 type ArticlesController struct{ db *gorm.DB }
 
 type CreateArticleDTO struct {
-	UserID     uint   `json:"userId"`
 	CategoryID uint   `json:"categoryId"`
 	Body       string `json:"body"`
 	Title      string `json:"title"`
@@ -97,12 +96,12 @@ func (ac *ArticlesController) GetArticle(c *gin.Context) {
 // 	@Router /articles [post]
 func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
-	u, err := getAuthenticatedUser(at)
+	au, err := getAuthenticatedUser(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create an article"})
 		return
 	}
-	if !(u.Role == models.RoleWriter || u.Role == models.RoleAdministrator) {
+	if !(au.Role == models.RoleWriter || au.Role == models.RoleAdministrator) {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only Writers and Administrators can create articles"})
 		return
 	}
@@ -111,15 +110,24 @@ func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusInternalServerError, Message: "invalid article"})
 		return
 	}
+
+	// Verify that a category with matching ID exists
+	var category models.Category
+	res := ac.db.Find(&category, ca.CategoryID)
+	if res.Error != nil || res.RowsAffected != 1 {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "category with provided id could not be retrieved"})
+		return
+	}
+
 	article := models.Article{
-		UserID:     ca.UserID,
+		UserID:     au.ID,
 		CategoryID: ca.CategoryID,
 		Body:       ca.Body,
 		Title:      ca.Title,
 		ImageURL:   ca.ImageURL,
 		Tags:       ca.Tags,
 	}
-	res := ac.db.Create(&article)
+	res = ac.db.Create(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create article: " + res.Error.Error()})
 		return
