@@ -89,11 +89,23 @@ func (ac *ArticlesController) GetArticle(c *gin.Context) {
 // 	@Description Register a new article.
 // 	@Tags articles
 // 	@Param article body CreateArticleDTO true "Article"
+// 	@Security AccessToken
 // 	@Success 200 {object} models.Category
 // 	@Failure 400 {object} models.APIError
+// 	@Failure 403 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [post]
 func (ac *ArticlesController) CreateArticle(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	u, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create an article"})
+		return
+	}
+	if !(u.Role == models.RoleWriter || u.Role == models.RoleAdministrator) {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only Writers and Administrators can create articles"})
+		return
+	}
 	var ca CreateArticleDTO
 	if err := c.ShouldBindJSON(&ca); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusInternalServerError, Message: "invalid article"})
@@ -127,12 +139,20 @@ func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 // 	@Tags articles
 // 	@Param id path int true "Article ID"
 // 	@Param article body UpdateArticleDTO true "Article"
+// 	@Security AccessToken
 // 	@Success 200 {object} models.Article
 // 	@Failure 400 {object} models.APIError
+// 	@Failure 403 {object} models.APIError
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [put]
 func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	au, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update an article"})
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
@@ -146,6 +166,11 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 	}
 	if res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article with provided id not found"})
+		return
+	}
+
+	if article.UserID != au.ID {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you can only modify articles created by you"})
 		return
 	}
 

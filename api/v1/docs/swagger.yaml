@@ -178,10 +178,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/models.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       summary: Create article
       tags:
       - articles
@@ -235,6 +241,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/models.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
         "404":
           description: Not Found
           schema:
@@ -243,6 +253,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       summary: Update article
       tags:
       - articles
