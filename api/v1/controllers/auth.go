@@ -152,13 +152,7 @@ func userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
 
 func getAuthenticatedUser(accessToken string) (*models.User, error) {
 	// Get AuthenticatedUser
-	var baseURL string
-	switch env := os.Getenv("ING_ENVIRONMENT"); env {
-	case "development":
-		baseURL = os.Getenv("ING_HOSTNAME") + os.Getenv("ING_PORT")
-	default:
-		baseURL = os.Getenv("ING_HOSTNAME")
-	}
+	baseURL := os.Getenv("ING_HOSTNAME")
 	req, err := http.NewRequest("GET", baseURL+"/v1/auth", nil)
 	if err != nil {
 		return nil, err

@@ -81,11 +81,23 @@ func (cc CategoriesController) GetCategory(c *gin.Context) {
 // 	@Description Register a new category.
 // 	@Tags categories
 // 	@Param category body CreateCategoryDTO true "Category"
+// 	@Security AccessToken
 // 	@Success 200 {object} models.Category
 // 	@Failure 400 {object} models.APIError
+// 	@Failure 403 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories [post]
 func (cc *CategoriesController) CreateCategory(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	u, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create a category"})
+		return
+	}
+	if u.Role != "Administrator" {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only users with role Administrator can create categories"})
+		return
+	}
 	var category models.Category
 	if err := c.ShouldBindJSON(&category); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusInternalServerError, Message: "invalid category"})
@@ -106,12 +118,24 @@ func (cc *CategoriesController) CreateCategory(c *gin.Context) {
 // 	@Tags categories
 // 	@Param id path int true "Category ID"
 // 	@Param category body UpdateCategoryDTO true "Category"
+// 	@Security AccessToken
 // 	@Success 200 {object} models.Category
 // 	@Failure 400 {object} models.APIError
+// 	@Failure 403 {object} models.APIError
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories/{id} [put]
 func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	u, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update a category"})
+		return
+	}
+	if u.Role != "Administrator" {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only users with role Administrator can update categories"})
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
