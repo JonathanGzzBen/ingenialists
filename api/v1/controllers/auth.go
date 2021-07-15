@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -144,6 +145,9 @@ func userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	if response.StatusCode != http.StatusOK {
+		return nil, errors.New("invalid access token")
+	}
 	defer response.Body.Close()
 	var uinfo *googleUserInfoResponse
 	json.NewDecoder(response.Body).Decode(&uinfo)
@@ -163,6 +167,9 @@ func getAuthenticatedUser(accessToken string) (*models.User, error) {
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("user not authenticated")
 	}
 	var au models.User
 	err = json.NewDecoder(res.Body).Decode(&au)
