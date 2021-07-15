@@ -6,13 +6,15 @@ Website with reviews and analysis about various engineering topics.
 
 ## API V1
 
-Copy example `.env` file and add your configurations to it:
+1. Follow [Google's documentations](https://support.google.com/cloud/answer/6158849?hl=en) to get Client ID and Client Secret
+
+2. Copy example `.env` file and add your configurations to it:
 
 ```shell
 cp .env.example .env
 ```
 
-Use VS Code tasks or scripts in `scripts` directory to build application or documentation.
+3. Use VS Code tasks or scripts in `scripts` directory to build application or update documentation.
 
 # Contribute
 
