@@ -591,7 +591,7 @@ var doc = `{
                 },
                 "role": {
                     "type": "string",
-                    "example": "User"
+                    "example": "Reader"
                 },
                 "shortDescription": {
                     "type": "string"

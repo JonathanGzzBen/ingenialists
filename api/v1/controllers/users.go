@@ -19,7 +19,7 @@ type UpdateUserDTO struct {
 	ProfilePictureURL string      `json:"profilePictureUrl"`
 	Description       string      `json:"description"`
 	ShortDescription  string      `json:"shortDescription"`
-	Role              models.Role `json:"role" example:"User"`
+	Role              models.Role `json:"role" example:"Reader"`
 }
 
 func NewUsersController(db *gorm.DB) UsersController {

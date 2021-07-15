@@ -56,7 +56,7 @@ definitions:
       profilePictureUrl:
         type: string
       role:
-        example: User
+        example: Reader
         type: string
       shortDescription:
         type: string
