@@ -97,7 +97,7 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "id is not a valid"})
 		return
 	}
-	if au.ID != uint(id) {
+	if au.ID != uint(id) && au.Role != models.RoleAdministrator {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "id does not match authenticated user"})
 		return
 	}
@@ -106,6 +106,21 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "invalid update user: " + err.Error()})
 		return
 	}
+	// If administrator is updating other user
+	if au.Role == models.RoleAdministrator && uint(id) != au.ID {
+		var u models.User
+		uc.db.First(&u, id)
+		// Administrators can only change Role of other users
+		u.Role = uu.Role
+		res := uc.db.Save(&u)
+		if res.Error != nil {
+			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, u)
+		return
+	}
+	// User is updating his own information
 	var u models.User
 	uc.db.First(&u, au.ID)
 	u.Name = uu.Name
@@ -114,7 +129,6 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 	u.ProfilePictureURL = uu.ProfilePictureURL
 	u.Description = uu.Description
 	u.ShortDescription = uu.ShortDescription
-	u.Role = uu.Role
 	res := uc.db.Save(&u)
 	if res.Error != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
