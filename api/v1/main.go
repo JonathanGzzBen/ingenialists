@@ -73,6 +73,7 @@ func main() {
 			cr.GET("/:id", cc.GetCategory)
 			cr.POST("/", cc.CreateCategory)
 			cr.PUT("/:id", cc.UpdateCategory)
+			cr.DELETE("/:id", cc.DeleteCategory)
 		}
 		arc := controllers.NewArticlesController(db)
 		arr := v1.Group("/articles")
@@ -81,6 +82,7 @@ func main() {
 			arr.GET("/:id", arc.GetArticle)
 			arr.POST("/", arc.CreateArticle)
 			arr.PUT("/:id", arc.UpdateArticle)
+			arr.DELETE("/:id", arc.DeleteArticle)
 		}
 	}
 

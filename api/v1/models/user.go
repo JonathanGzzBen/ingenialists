@@ -13,5 +13,13 @@ type User struct {
 	ProfilePictureURL string    `json:"profilePictureUrl"`
 	Description       string    `json:"description"`
 	ShortDescription  string    `json:"shortDescription"`
-	Role              string    `json:"role" example:"User"`
+	Role              Role      `json:"role" example:"Reader"`
 }
+
+type Role string
+
+const (
+	RoleAdministrator Role = "Administrator"
+	RoleWriter        Role = "Writer"
+	RoleReader        Role = "Reader"
+)

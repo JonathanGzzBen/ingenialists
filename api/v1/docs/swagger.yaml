@@ -12,8 +12,6 @@ definitions:
         type: string
       title:
         type: string
-      userId:
-        type: integer
     type: object
   controllers.CreateCategoryDTO:
     properties:
@@ -56,7 +54,7 @@ definitions:
       profilePictureUrl:
         type: string
       role:
-        example: User
+        example: Reader
         type: string
       shortDescription:
         type: string
@@ -123,7 +121,7 @@ definitions:
       profilePictureUrl:
         type: string
       role:
-        example: User
+        example: Reader
         type: string
       shortDescription:
         type: string
@@ -178,14 +176,51 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/models.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       summary: Create article
       tags:
       - articles
   /articles/{id}:
+    delete:
+      description: Delete article with matching ID.
+      operationId: DeleteArticle
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
+      summary: Delete article
+      tags:
+      - articles
     get:
       description: Get article with matching ID.
       operationId: GetArticle
@@ -235,6 +270,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/models.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
         "404":
           description: Not Found
           schema:
@@ -243,6 +282,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       summary: Update article
       tags:
       - articles
@@ -299,14 +340,51 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/models.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       summary: Create category
       tags:
       - categories
   /categories/{id}:
+    delete:
+      description: Delete category with matching ID.
+      operationId: DeleteCategory
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
+      summary: Delete category
+      tags:
+      - categories
     get:
       description: Get category with matching ID.
       operationId: GetCategory
@@ -356,6 +434,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/models.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.APIError'
         "404":
           description: Not Found
           schema:
@@ -364,6 +446,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.APIError'
+      security:
+      - AccessToken: []
       summary: Update category
       tags:
       - categories

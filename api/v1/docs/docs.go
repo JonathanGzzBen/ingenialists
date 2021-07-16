@@ -59,6 +59,11 @@ var doc = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Register a new article.",
                 "tags": [
                     "articles"
@@ -85,6 +90,12 @@ var doc = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -137,6 +148,11 @@ var doc = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Updates a registered article.",
                 "tags": [
                     "articles"
@@ -170,6 +186,60 @@ var doc = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Delete article with matching ID.",
+                "tags": [
+                    "articles"
+                ],
+                "summary": "Delete article",
+                "operationId": "DeleteArticle",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Article ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -243,6 +313,11 @@ var doc = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Register a new category.",
                 "tags": [
                     "categories"
@@ -269,6 +344,12 @@ var doc = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -321,6 +402,11 @@ var doc = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
                 "description": "Updates a registered category.",
                 "tags": [
                     "categories"
@@ -354,6 +440,60 @@ var doc = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    }
+                ],
+                "description": "Delete category with matching ID.",
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Delete category",
+                "operationId": "DeleteCategory",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/models.APIError"
                         }
@@ -497,9 +637,6 @@ var doc = `{
                 },
                 "title": {
                     "type": "string"
-                },
-                "userId": {
-                    "type": "integer"
                 }
             }
         },
@@ -569,7 +706,7 @@ var doc = `{
                 },
                 "role": {
                     "type": "string",
-                    "example": "User"
+                    "example": "Reader"
                 },
                 "shortDescription": {
                     "type": "string"
@@ -666,7 +803,7 @@ var doc = `{
                 },
                 "role": {
                     "type": "string",
-                    "example": "User"
+                    "example": "Reader"
                 },
                 "shortDescription": {
                     "type": "string"

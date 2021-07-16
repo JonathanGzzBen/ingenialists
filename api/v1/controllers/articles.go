@@ -13,7 +13,6 @@ import (
 type ArticlesController struct{ db *gorm.DB }
 
 type CreateArticleDTO struct {
-	UserID     uint   `json:"userId"`
 	CategoryID uint   `json:"categoryId"`
 	Body       string `json:"body"`
 	Title      string `json:"title"`
@@ -89,25 +88,46 @@ func (ac *ArticlesController) GetArticle(c *gin.Context) {
 // 	@Description Register a new article.
 // 	@Tags articles
 // 	@Param article body CreateArticleDTO true "Article"
+// 	@Security AccessToken
 // 	@Success 200 {object} models.Category
 // 	@Failure 400 {object} models.APIError
+// 	@Failure 403 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [post]
 func (ac *ArticlesController) CreateArticle(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	au, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create an article"})
+		return
+	}
+	if !(au.Role == models.RoleWriter || au.Role == models.RoleAdministrator) {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "only Writers and Administrators can create articles"})
+		return
+	}
 	var ca CreateArticleDTO
 	if err := c.ShouldBindJSON(&ca); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusInternalServerError, Message: "invalid article"})
 		return
 	}
+
+	// Verify that a category with matching ID exists
+	var category models.Category
+	res := ac.db.Find(&category, ca.CategoryID)
+	if res.Error != nil || res.RowsAffected != 1 {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "category with provided id could not be retrieved"})
+		return
+	}
+
 	article := models.Article{
-		UserID:     ca.UserID,
+		UserID:     au.ID,
 		CategoryID: ca.CategoryID,
 		Body:       ca.Body,
 		Title:      ca.Title,
 		ImageURL:   ca.ImageURL,
 		Tags:       ca.Tags,
 	}
-	res := ac.db.Create(&article)
+	res = ac.db.Create(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create article: " + res.Error.Error()})
 		return
@@ -127,12 +147,20 @@ func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 // 	@Tags articles
 // 	@Param id path int true "Article ID"
 // 	@Param article body UpdateArticleDTO true "Article"
+// 	@Security AccessToken
 // 	@Success 200 {object} models.Article
 // 	@Failure 400 {object} models.APIError
+// 	@Failure 403 {object} models.APIError
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [put]
 func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	au, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update an article"})
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
@@ -146,6 +174,11 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 	}
 	if res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article with provided id not found"})
+		return
+	}
+
+	if article.UserID != au.ID {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you can only modify articles created by you"})
 		return
 	}
 
@@ -172,4 +205,51 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, article)
+}
+
+// DeleteArticle is the handler for DELETE requests to /articles/:id
+// 	@ID DeleteArticle
+// 	@Summary Delete article
+// 	@Description Delete article with matching ID.
+// 	@Tags articles
+// 	@Param id path int true "Article ID"
+// 	@Security AccessToken
+// 	@Success 204 {object} string
+// 	@Failure 403 {object} models.APIError
+// 	@Failure 404 {object} models.APIError
+// 	@Failure 500 {object} models.APIError
+// 	@Router /articles/{id} [delete]
+func (ac *ArticlesController) DeleteArticle(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	au, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to delete an article"})
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
+		return
+	}
+
+	var article models.Article
+	res := ac.db.Find(&article, id)
+	if res.Error != nil || res.RowsAffected != 1 {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article not found"})
+		return
+	}
+
+	// If article doens't belong to authenticated user
+	// and authenticated user is not administrator
+	if !(article.UserID == au.ID || au.Role == models.RoleAdministrator) {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you are not authenticated as administrator or this article doesn't belong to you"})
+		return
+	}
+
+	res = ac.db.Delete(&article)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
+		return
+	}
+	c.String(http.StatusNoContent, "deleted")
 }
