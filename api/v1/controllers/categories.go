@@ -167,3 +167,49 @@ func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, category)
 }
+
+// DeleteCategory is the handler for DELETE requests to /categories/:id
+// 	@ID DeleteCategory
+// 	@Summary Delete category
+// 	@Description Delete category with matching ID.
+// 	@Tags categories
+// 	@Param id path int true "Category ID"
+// 	@Security AccessToken
+// 	@Success 204 {object} string
+// 	@Failure 403 {object} models.APIError
+// 	@Failure 404 {object} models.APIError
+// 	@Failure 500 {object} models.APIError
+// 	@Router /categories/{id} [delete]
+func (cc *CategoriesController) DeleteCategory(c *gin.Context) {
+	at := c.GetHeader(accessTokenName)
+	au, err := getAuthenticatedUser(at)
+	if err != nil {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to delete a category"})
+		return
+	}
+	// If authenticated user is not Administrator
+	if au.Role != models.RoleAdministrator {
+		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you are not authenticated as administrator"})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
+		return
+	}
+
+	var category models.Category
+	res := cc.db.Find(&category, id)
+	if res.Error != nil || res.RowsAffected != 1 {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
+		return
+	}
+
+	res = cc.db.Delete(&category)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
+		return
+	}
+	c.String(http.StatusNoContent, "deleted")
+}
