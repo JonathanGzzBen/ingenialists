@@ -7,10 +7,7 @@ import (
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
-
-type UsersController struct{ db *gorm.DB }
 
 type UpdateUserDTO struct {
 	Name              string      `json:"name" binding:"required"`
@@ -22,12 +19,6 @@ type UpdateUserDTO struct {
 	Role              models.Role `json:"role" example:"Reader"`
 }
 
-func NewUsersController(db *gorm.DB) UsersController {
-	return UsersController{
-		db: db,
-	}
-}
-
 // GetAllUsers is the handler for GET requests to /users
 // 	@ID GetAllUsers
 // 	@Summary Get all users
@@ -36,9 +27,9 @@ func NewUsersController(db *gorm.DB) UsersController {
 // 	@Success 200 {array} models.User
 // 	@Failure 500 {object} models.APIError
 // 	@Router /users [get]
-func (uc *UsersController) GetAllUsers(c *gin.Context) {
+func GetAllUsers(c *gin.Context) {
 	var users models.User
-	result := uc.db.Find(&users)
+	result := models.DB.Find(&users)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not connect to database"})
 		return
@@ -55,14 +46,14 @@ func (uc *UsersController) GetAllUsers(c *gin.Context) {
 // 	@Success 200 {object} models.User
 // 	@Failure 404 {object} models.APIError
 // 	@Router /users/{id} [get]
-func (uc *UsersController) GetUser(c *gin.Context) {
+func GetUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
 	var u models.User
-	res := uc.db.Find(&u, id)
+	res := models.DB.Find(&u, id)
 	if res.Error != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: res.Error.Error()})
 		return
@@ -85,7 +76,7 @@ func (uc *UsersController) GetUser(c *gin.Context) {
 // 	@Success 200 {object} models.User
 // 	@Failure 400 {object} models.APIError
 // 	@Router /users/{id} [put]
-func (uc *UsersController) UpdateUser(c *gin.Context) {
+func UpdateUser(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	au, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -109,10 +100,10 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 	// If administrator is updating other user
 	if au.Role == models.RoleAdministrator && uint(id) != au.ID {
 		var u models.User
-		uc.db.First(&u, id)
+		models.DB.First(&u, id)
 		// Administrators can only change Role of other users
 		u.Role = uu.Role
-		res := uc.db.Save(&u)
+		res := models.DB.Save(&u)
 		if res.Error != nil {
 			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
 			return
@@ -122,14 +113,14 @@ func (uc *UsersController) UpdateUser(c *gin.Context) {
 	}
 	// User is updating his own information
 	var u models.User
-	uc.db.First(&u, au.ID)
+	models.DB.First(&u, au.ID)
 	u.Name = uu.Name
 	u.Birthdate = uu.Birthdate
 	u.Gender = uu.Gender
 	u.ProfilePictureURL = uu.ProfilePictureURL
 	u.Description = uu.Description
 	u.ShortDescription = uu.ShortDescription
-	res := uc.db.Save(&u)
+	res := models.DB.Save(&u)
 	if res.Error != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
 		return

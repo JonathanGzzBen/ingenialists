@@ -6,10 +6,7 @@ import (
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
-
-type CategoriesController struct{ db *gorm.DB }
 
 type CreateCategoryDTO struct {
 	Name     string `json:"name"`
@@ -21,13 +18,6 @@ type UpdateCategoryDTO struct {
 	ImageURL string `json:"imageUrl"`
 }
 
-// NewCategoriesController returns a new controller for categories
-func NewCategoriesController(db *gorm.DB) CategoriesController {
-	return CategoriesController{
-		db: db,
-	}
-}
-
 // GetAllCategories is the handler for GET requests to /categories
 // 	@ID GetAllCategories
 // 	@Summary Get all categories
@@ -36,9 +26,9 @@ func NewCategoriesController(db *gorm.DB) CategoriesController {
 // 	@Success 200 {array} models.Category
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories [get]
-func (cc *CategoriesController) GetAllCategories(c *gin.Context) {
+func GetAllCategories(c *gin.Context) {
 	var categories models.Category
-	r := cc.db.Find(&categories)
+	r := models.DB.Find(&categories)
 	if r.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get categories"})
 		return
@@ -56,14 +46,14 @@ func (cc *CategoriesController) GetAllCategories(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories/{id} [get]
-func (cc CategoriesController) GetCategory(c *gin.Context) {
+func GetCategory(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
 	var category models.Category
-	res := cc.db.Find(&category, id)
+	res := models.DB.Find(&category, id)
 	if res.Error == nil && res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
@@ -87,7 +77,7 @@ func (cc CategoriesController) GetCategory(c *gin.Context) {
 // 	@Failure 403 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories [post]
-func (cc *CategoriesController) CreateCategory(c *gin.Context) {
+func CreateCategory(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	u, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -103,7 +93,7 @@ func (cc *CategoriesController) CreateCategory(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusInternalServerError, Message: "invalid category"})
 		return
 	}
-	result := cc.db.Create(&category)
+	result := models.DB.Create(&category)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create category:" + result.Error.Error()})
 		return
@@ -125,7 +115,7 @@ func (cc *CategoriesController) CreateCategory(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories/{id} [put]
-func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
+func UpdateCategory(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	u, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -142,7 +132,7 @@ func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
 		return
 	}
 	var category models.Category
-	res := cc.db.Find(&category, id)
+	res := models.DB.Find(&category, id)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
 		return
@@ -160,7 +150,7 @@ func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
 
 	category.Name = cu.Name
 	category.ImageURL = cu.ImageURL
-	res = cc.db.Save(&category)
+	res = models.DB.Save(&category)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not save updated category: " + err.Error()})
 		return
@@ -180,7 +170,7 @@ func (cc *CategoriesController) UpdateCategory(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories/{id} [delete]
-func (cc *CategoriesController) DeleteCategory(c *gin.Context) {
+func DeleteCategory(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	au, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -200,13 +190,13 @@ func (cc *CategoriesController) DeleteCategory(c *gin.Context) {
 	}
 
 	var category models.Category
-	res := cc.db.Find(&category, id)
+	res := models.DB.Find(&category, id)
 	if res.Error != nil || res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
 	}
 
-	res = cc.db.Delete(&category)
+	res = models.DB.Delete(&category)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
 		return

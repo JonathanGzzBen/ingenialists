@@ -6,11 +6,8 @@ import (
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
-
-type ArticlesController struct{ db *gorm.DB }
 
 type CreateArticleDTO struct {
 	CategoryID uint   `json:"categoryId"`
@@ -28,13 +25,6 @@ type UpdateArticleDTO struct {
 	Tags       string `json:"tags"`
 }
 
-// NewCategoriesController returns a new controller for categories
-func NewArticlesController(db *gorm.DB) ArticlesController {
-	return ArticlesController{
-		db: db,
-	}
-}
-
 // GetAllArticles is the handler for GET requests to /articles
 // 	@ID GetAllArticles
 // 	@Summary Get all articles
@@ -43,9 +33,9 @@ func NewArticlesController(db *gorm.DB) ArticlesController {
 // 	@Success 200 {array} models.Article
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [get]
-func (ac *ArticlesController) GetAllArticles(c *gin.Context) {
+func GetAllArticles(c *gin.Context) {
 	var a models.Article
-	r := ac.db.Preload(clause.Associations).Find(&a)
+	r := models.DB.Preload(clause.Associations).Find(&a)
 	if r.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get articles"})
 		return
@@ -63,14 +53,14 @@ func (ac *ArticlesController) GetAllArticles(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [get]
-func (ac *ArticlesController) GetArticle(c *gin.Context) {
+func GetArticle(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
 	var category models.Category
-	res := ac.db.Find(&category, id)
+	res := models.DB.Find(&category, id)
 	if res.Error == nil && res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
@@ -94,7 +84,7 @@ func (ac *ArticlesController) GetArticle(c *gin.Context) {
 // 	@Failure 403 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [post]
-func (ac *ArticlesController) CreateArticle(c *gin.Context) {
+func CreateArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	au, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -113,7 +103,7 @@ func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 
 	// Verify that a category with matching ID exists
 	var category models.Category
-	res := ac.db.Find(&category, ca.CategoryID)
+	res := models.DB.Find(&category, ca.CategoryID)
 	if res.Error != nil || res.RowsAffected != 1 {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "category with provided id could not be retrieved"})
 		return
@@ -127,12 +117,12 @@ func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 		ImageURL:   ca.ImageURL,
 		Tags:       ca.Tags,
 	}
-	res = ac.db.Create(&article)
+	res = models.DB.Create(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create article: " + res.Error.Error()})
 		return
 	}
-	res = ac.db.Preload(clause.Associations).Find(&article, article.ID)
+	res = models.DB.Preload(clause.Associations).Find(&article, article.ID)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not retrieve created article: " + res.Error.Error()})
 		return
@@ -154,7 +144,7 @@ func (ac *ArticlesController) CreateArticle(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [put]
-func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
+func UpdateArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	au, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -167,7 +157,7 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 		return
 	}
 	var article models.Article
-	res := ac.db.Find(&article, id)
+	res := models.DB.Find(&article, id)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
 		return
@@ -194,12 +184,12 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 	article.ImageURL = ua.ImageURL
 	article.Tags = ua.Tags
 
-	res = ac.db.Save(&article)
+	res = models.DB.Save(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not save updated article: " + err.Error()})
 		return
 	}
-	res = ac.db.Preload(clause.Associations).Find(&article, article.ID)
+	res = models.DB.Preload(clause.Associations).Find(&article, article.ID)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not retrieve updated article: " + err.Error()})
 		return
@@ -219,7 +209,7 @@ func (ac *ArticlesController) UpdateArticle(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [delete]
-func (ac *ArticlesController) DeleteArticle(c *gin.Context) {
+func DeleteArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
 	au, err := getAuthenticatedUser(at)
 	if err != nil {
@@ -233,7 +223,7 @@ func (ac *ArticlesController) DeleteArticle(c *gin.Context) {
 	}
 
 	var article models.Article
-	res := ac.db.Find(&article, id)
+	res := models.DB.Find(&article, id)
 	if res.Error != nil || res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article not found"})
 		return
@@ -246,7 +236,7 @@ func (ac *ArticlesController) DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	res = ac.db.Delete(&article)
+	res = models.DB.Delete(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
 		return

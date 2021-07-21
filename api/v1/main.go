@@ -1,8 +1,12 @@
 package main
 
 import (
+	"os"
+
+	"github.com/JonathanGzzBen/ingenialists/api/v1/controllers"
 	_ "github.com/JonathanGzzBen/ingenialists/api/v1/docs"
-	"github.com/JonathanGzzBen/ingenialists/api/v1/pkg"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/joho/godotenv"
 )
 
 // @title Ingenialists API V1
@@ -29,6 +33,18 @@ import (
 // @scope.profile Grant access to profile
 // @scope.email Grant access to email
 func main() {
-	api := pkg.IngenialistsAPIV1{}
-	api.Run()
+	godotenv.Load(".env")
+	models.ConnectDatabase()
+
+	r := controllers.V1Router()
+
+	if os.Getenv("ING_ENVIRONMENT") == "development" {
+		port := os.Getenv("ING_PORT")
+		if len(port) == 0 {
+			panic("Environment variable ING_PORT missing")
+		}
+		r.Run(port)
+	} else {
+		r.Run()
+	}
 }
