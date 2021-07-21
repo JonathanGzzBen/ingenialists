@@ -8,7 +8,9 @@ import (
 )
 
 func TestGetCurrentUser(t *testing.T) {
-	ts := httptest.NewServer(NewTestEnvironment().Server.Router)
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
 	defer ts.Close()
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/auth", ts.URL))
