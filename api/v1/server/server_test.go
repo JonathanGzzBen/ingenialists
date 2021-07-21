@@ -13,6 +13,10 @@ type TestEnvironment struct {
 	DB     *gorm.DB
 }
 
+func (e *TestEnvironment) Close() {
+	os.Remove("test.db")
+}
+
 func NewTestEnvironment() *TestEnvironment {
 	os.Remove("test.db")
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})

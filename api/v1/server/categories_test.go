@@ -12,6 +12,7 @@ import (
 
 func TestGetAllCategories(t *testing.T) {
 	e := NewTestEnvironment()
+	defer e.Close()
 	ts := httptest.NewServer(e.Server.Router)
 	defer ts.Close()
 
