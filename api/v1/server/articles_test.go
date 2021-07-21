@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetAllArticles(t *testing.T) {
-	ts := httptest.NewServer(GetTestServer().Router)
+	ts := httptest.NewServer(NewTestServer().Router)
 	defer ts.Close()
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/articles", ts.URL))

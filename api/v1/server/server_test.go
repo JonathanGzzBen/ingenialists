@@ -8,8 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetTestServer() *server.Server {
-	db, err := gorm.Open(sqlite.Open("test.db"))
+func NewTestServer() *server.Server {
+	os.Remove("test.db")
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("Could not connect to database")
 	}
