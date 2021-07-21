@@ -1,16 +1,13 @@
-package controllers
+package server
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
 )
@@ -18,11 +15,9 @@ import (
 var (
 	state = "ingenialists"
 
-	googleClientID     string
-	googleClientSecret string
-	googleUserInfoURL  = "https://www.googleapis.com/oauth2/v3/userinfo"
-	googleCallbackURL  = "http://127.0.0.1:8080/v1/auth/google-callback"
-	googleConfig       oauth2.Config
+	googleUserInfoURL = "https://www.googleapis.com/oauth2/v3/userinfo"
+	googleCallbackURL = "http://127.0.0.1:8080/v1/auth/google-callback"
+	gc                oauth2.Config
 
 	accessTokenName = "AccessToken"
 )
@@ -38,20 +33,22 @@ type googleUserInfoResponse struct {
 	Locale        string `json:"locale"`
 }
 
-func init() {
-	godotenv.Load(".env")
-	googleClientID = os.Getenv("ING_GOOGLE_CLIENT_ID")
-	googleClientSecret = os.Getenv("ING_GOOGLE_CLIENT_SECRET")
-	googleConfig = oauth2.Config{
-		ClientID:     googleClientID,
-		ClientSecret: googleClientSecret,
+type GoogleClientConfig struct {
+	ClientID     string
+	ClientSecret string
+}
+
+// SetupGoogleOAuth2 initializes GoogleOAuth2 service
+// and is necessary to use auth service
+func (s *Server) SetupGoogleOAuth2(gcf GoogleClientConfig) {
+	gc = oauth2.Config{
+		ClientID:     gcf.ClientID,
+		ClientSecret: gcf.ClientSecret,
 		Endpoint:     endpoints.Google,
 		RedirectURL:  googleCallbackURL,
 		Scopes:       []string{"openid", "profile", "email"},
 	}
-	if len(googleClientID) == 0 || len(googleClientSecret) == 0 {
-		panic("Environment variables ING_GOOGLE_CLIENT_ID or ING_CLIENT_SECRET missing")
-	}
+	s.googleConfig = gc
 }
 
 // CurrentUser is the handler for GET requests to /auth
@@ -61,9 +58,9 @@ func init() {
 // 	@Failure 403 {object} models.APIError
 // 	@Security AccessToken
 // 	@Router /auth [get]
-func GetCurrentUser(c *gin.Context) {
+func (s *Server) GetCurrentUser(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
-	u, err := userByAccessToken(at)
+	u, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "invalid access token"})
 		return
@@ -73,10 +70,8 @@ func GetCurrentUser(c *gin.Context) {
 
 // LoginGoogle is the handler for GET requests to /auth/google-login
 // it's the entryway for Google OAuth2 flow.
-func LoginGoogle(c *gin.Context) {
-	log.Println("Client ID: ", googleClientSecret)
-	log.Println("Client Secret: ", googleClientSecret)
-	url := googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+func (s *Server) LoginGoogle(c *gin.Context) {
+	url := gc.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -84,7 +79,7 @@ func LoginGoogle(c *gin.Context) {
 // it's part of Google OAuth2 flow.
 //
 // Returns user's token.
-func GoogleCallback(c *gin.Context) {
+func (s *Server) GoogleCallback(c *gin.Context) {
 	if c.Request.URL.Query().Get("state") != state {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "state did not match"})
 		return
@@ -92,20 +87,20 @@ func GoogleCallback(c *gin.Context) {
 
 	authCode := c.Request.URL.Query().Get("code")
 	ctx := context.Background()
-	token, err := googleConfig.Exchange(ctx, authCode)
+	token, err := gc.Exchange(ctx, authCode)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to exchange token: " + err.Error()})
 		return
 	}
 
-	uinfo, err := userInfoByAccessToken(token.AccessToken)
+	uinfo, err := s.userInfoByAccessToken(token.AccessToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to get user info: " + err.Error()})
 		return
 	}
 
 	var u models.User
-	res := models.DB.Where("google_sub = ? ", uinfo.Sub).First(&u)
+	res := s.db.Where("google_sub = ? ", uinfo.Sub).First(&u)
 	// If there is no user with that sub, create one
 	if res.Error != nil {
 		u = models.User{
@@ -113,19 +108,19 @@ func GoogleCallback(c *gin.Context) {
 			ProfilePictureURL: uinfo.Picture,
 			Name:              uinfo.Name,
 		}
-		models.DB.Save(&u)
+		s.db.Save(&u)
 	}
 
 	c.JSON(http.StatusOK, token)
 }
 
-func userByAccessToken(at string) (*models.User, error) {
-	ui, err := userInfoByAccessToken(at)
+func (s *Server) userByAccessToken(at string) (*models.User, error) {
+	ui, err := s.userInfoByAccessToken(at)
 	if err != nil {
 		return nil, err
 	}
 	var u *models.User
-	res := models.DB.Where("google_sub = ? ", ui.Sub).First(&u)
+	res := s.db.Where("google_sub = ? ", ui.Sub).First(&u)
 	if res.Error != nil {
 		return nil, err
 	}
@@ -133,7 +128,7 @@ func userByAccessToken(at string) (*models.User, error) {
 }
 
 // userInfoByAccessToken returns userInfo
-func userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
+func (s *Server) userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
 	response, err := http.Get(googleUserInfoURL + "?access_token=" + at)
 	if err != nil {
 		return nil, err
@@ -145,30 +140,4 @@ func userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
 	var uinfo *googleUserInfoResponse
 	json.NewDecoder(response.Body).Decode(&uinfo)
 	return uinfo, nil
-}
-
-func getAuthenticatedUser(accessToken string) (*models.User, error) {
-	// Get AuthenticatedUser
-	baseURL := os.Getenv("ING_HOSTNAME")
-	req, err := http.NewRequest("GET", baseURL+"/v1/auth", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add(accessTokenName, accessToken)
-	log.Println("Access token: ", accessToken)
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("user not authenticated")
-	}
-	var au models.User
-	err = json.NewDecoder(res.Body).Decode(&au)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	return &au, nil
 }

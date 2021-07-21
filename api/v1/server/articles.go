@@ -1,4 +1,4 @@
-package controllers
+package server
 
 import (
 	"net/http"
@@ -33,9 +33,9 @@ type UpdateArticleDTO struct {
 // 	@Success 200 {array} models.Article
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [get]
-func GetAllArticles(c *gin.Context) {
+func (s *Server) GetAllArticles(c *gin.Context) {
 	var a models.Article
-	r := models.DB.Preload(clause.Associations).Find(&a)
+	r := s.db.Preload(clause.Associations).Find(&a)
 	if r.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get articles"})
 		return
@@ -53,14 +53,14 @@ func GetAllArticles(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [get]
-func GetArticle(c *gin.Context) {
+func (s *Server) GetArticle(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
 	var category models.Category
-	res := models.DB.Find(&category, id)
+	res := s.db.Find(&category, id)
 	if res.Error == nil && res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
@@ -84,9 +84,9 @@ func GetArticle(c *gin.Context) {
 // 	@Failure 403 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [post]
-func CreateArticle(c *gin.Context) {
+func (s *Server) CreateArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
-	au, err := getAuthenticatedUser(at)
+	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create an article"})
 		return
@@ -103,7 +103,7 @@ func CreateArticle(c *gin.Context) {
 
 	// Verify that a category with matching ID exists
 	var category models.Category
-	res := models.DB.Find(&category, ca.CategoryID)
+	res := s.db.Find(&category, ca.CategoryID)
 	if res.Error != nil || res.RowsAffected != 1 {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "category with provided id could not be retrieved"})
 		return
@@ -117,12 +117,12 @@ func CreateArticle(c *gin.Context) {
 		ImageURL:   ca.ImageURL,
 		Tags:       ca.Tags,
 	}
-	res = models.DB.Create(&article)
+	res = s.db.Create(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create article: " + res.Error.Error()})
 		return
 	}
-	res = models.DB.Preload(clause.Associations).Find(&article, article.ID)
+	res = s.db.Preload(clause.Associations).Find(&article, article.ID)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not retrieve created article: " + res.Error.Error()})
 		return
@@ -144,9 +144,9 @@ func CreateArticle(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [put]
-func UpdateArticle(c *gin.Context) {
+func (s *Server) UpdateArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
-	au, err := getAuthenticatedUser(at)
+	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update an article"})
 		return
@@ -157,7 +157,7 @@ func UpdateArticle(c *gin.Context) {
 		return
 	}
 	var article models.Article
-	res := models.DB.Find(&article, id)
+	res := s.db.Find(&article, id)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
 		return
@@ -184,12 +184,12 @@ func UpdateArticle(c *gin.Context) {
 	article.ImageURL = ua.ImageURL
 	article.Tags = ua.Tags
 
-	res = models.DB.Save(&article)
+	res = s.db.Save(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not save updated article: " + err.Error()})
 		return
 	}
-	res = models.DB.Preload(clause.Associations).Find(&article, article.ID)
+	res = s.db.Preload(clause.Associations).Find(&article, article.ID)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not retrieve updated article: " + err.Error()})
 		return
@@ -209,9 +209,9 @@ func UpdateArticle(c *gin.Context) {
 // 	@Failure 404 {object} models.APIError
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [delete]
-func DeleteArticle(c *gin.Context) {
+func (s *Server) DeleteArticle(c *gin.Context) {
 	at := c.GetHeader(accessTokenName)
-	au, err := getAuthenticatedUser(at)
+	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to delete an article"})
 		return
@@ -223,7 +223,7 @@ func DeleteArticle(c *gin.Context) {
 	}
 
 	var article models.Article
-	res := models.DB.Find(&article, id)
+	res := s.db.Find(&article, id)
 	if res.Error != nil || res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article not found"})
 		return
@@ -236,7 +236,7 @@ func DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	res = models.DB.Delete(&article)
+	res = s.db.Delete(&article)
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
 		return

@@ -3,10 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/JonathanGzzBen/ingenialists/api/v1/controllers"
 	_ "github.com/JonathanGzzBen/ingenialists/api/v1/docs"
-	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // @title Ingenialists API V1
@@ -34,17 +35,31 @@ import (
 // @scope.email Grant access to email
 func main() {
 	godotenv.Load(".env")
-	models.ConnectDatabase()
-
-	r := controllers.V1Router()
+	db, err := gorm.Open(sqlite.Open("test.db"))
+	if err != nil {
+		panic("Could not connect to database")
+	}
+	serverConfig := server.ServerConfig{
+		DB:                 db,
+		GoogleClientID:     os.Getenv("ING_GOOGLE_CLIENT_ID"),
+		GoogleClientSecret: os.Getenv("ING_GOOGLE_CLIENT_SECRET"),
+	}
+	// hostname is used by multiple controllers
+	// to make requests to authentication controller
+	hostname := os.Getenv("ING_HOSTNAME")
+	if len(hostname) == 0 {
+		panic("Environment variable ING_HOSTNAME missing")
+	}
+	serverConfig.Hostname = hostname
+	s := server.NewServer(serverConfig)
 
 	if os.Getenv("ING_ENVIRONMENT") == "development" {
 		port := os.Getenv("ING_PORT")
 		if len(port) == 0 {
 			panic("Environment variable ING_PORT missing")
 		}
-		r.Run(port)
+		s.Run(port)
 	} else {
-		r.Run()
+		s.Run()
 	}
 }
