@@ -7,11 +7,11 @@ import (
 	"testing"
 )
 
-func TestGetAllCategories(t *testing.T) {
+func TestGetAllArticles(t *testing.T) {
 	ts := httptest.NewServer(GetTestServer().Router)
 	defer ts.Close()
 
-	res, err := http.Get(fmt.Sprintf("%s/v1/categories", ts.URL))
+	res, err := http.Get(fmt.Sprintf("%s/v1/articles", ts.URL))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

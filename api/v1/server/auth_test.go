@@ -7,17 +7,17 @@ import (
 	"testing"
 )
 
-func TestGetAllCategories(t *testing.T) {
+func TestGetCurrentUser(t *testing.T) {
 	ts := httptest.NewServer(GetTestServer().Router)
 	defer ts.Close()
 
-	res, err := http.Get(fmt.Sprintf("%s/v1/categories", ts.URL))
+	res, err := http.Get(fmt.Sprintf("%s/v1/auth", ts.URL))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	if res.StatusCode != 200 {
-		t.Fatalf("Expected status code 200, got %v", res.StatusCode)
+	if res.StatusCode != 403 {
+		t.Fatalf("Expected status code 403, got %v", res.StatusCode)
 	}
 
 	val, ok := res.Header["Content-Type"]
@@ -27,6 +27,6 @@ func TestGetAllCategories(t *testing.T) {
 	}
 
 	if val[0] != "application/json; charset=utf-8" {
-		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+		t.Fatalf("Expected \"application/json; charset=utf-7\", got %s", val[0])
 	}
 }
