@@ -27,7 +27,7 @@ type UpdateCategoryDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories [get]
 func (s *Server) GetAllCategories(c *gin.Context) {
-	var categories models.Category
+	var categories []models.Category
 	r := s.db.Find(&categories)
 	if r.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get categories"})

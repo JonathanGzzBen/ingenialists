@@ -8,7 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewTestServer() *server.Server {
+type TestEnvironment struct {
+	Server *server.Server
+	DB     *gorm.DB
+}
+
+func NewTestEnvironment() *TestEnvironment {
 	os.Remove("test.db")
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
@@ -22,5 +27,9 @@ func NewTestServer() *server.Server {
 			Hostname:           "http://localhost:8080",
 		},
 	)
-	return server
+	ts := &TestEnvironment{
+		Server: server,
+		DB:     db,
+	}
+	return ts
 }
