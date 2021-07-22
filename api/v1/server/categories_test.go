@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -86,6 +87,47 @@ func TestGetCategory(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
+	var resCategory models.Category
+	err = json.NewDecoder(res.Body).Decode(&resCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if !reflect.DeepEqual(resCategory, mockCategory) {
+		t.Fatalf("Expected %v, got %v", mockCategory, resCategory)
+	}
+
+}
+
+func TestCreateCategory(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+
+	mcJSONBytes, err := json.Marshal(mockCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	res, err := http.Post(fmt.Sprintf("%s/v1/categories", ts.URL), "application/json", bytes.NewBuffer(mcJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != 200 {
+		t.Fatalf("Expected status code 200, got %v", res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
 	var resCategory models.Category
 	err = json.NewDecoder(res.Body).Decode(&resCategory)
 	if err != nil {
