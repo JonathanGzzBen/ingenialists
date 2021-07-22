@@ -82,11 +82,20 @@ func (s *Server) GoogleCallback(c *gin.Context) {
 
 func (s *Server) userByAccessToken(at string) (*models.User, error) {
 	ui, err := s.googleClient.userInfoByAccessToken(at)
-	if s.development {
-		return &models.User{ID: 1, GoogleSub: ui.Sub, Name: ui.Name}, nil
-	}
 	if err != nil {
 		return nil, err
+	}
+	if s.development {
+		var role models.Role
+		switch at {
+		case "Administrator":
+			role = models.RoleAdministrator
+		case "Writer":
+			role = models.RoleWriter
+		default:
+			role = models.RoleReader
+		}
+		return &models.User{ID: 1, GoogleSub: ui.Sub, Name: ui.Name, Role: role}, nil
 	}
 	var u *models.User
 	res := s.db.Where("google_sub = ? ", ui.Sub).First(&u)

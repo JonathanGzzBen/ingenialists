@@ -40,8 +40,13 @@ func (g *GoogleClient) userInfoByAccessToken(at string) (*googleUserInfoResponse
 
 // userInfoByAccessToken returns userInfo
 func (g *GoogleClientMock) userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
-	return &googleUserInfoResponse{
-		Sub:  "123123213",
-		Name: "Mock User",
-	}, nil
+	switch at {
+	case "AccessToken", "Writer", "Reader":
+		return &googleUserInfoResponse{
+			Sub:  "123123213",
+			Name: "Mock User",
+		}, nil
+	default:
+		return nil, errors.New("invalid access token")
+	}
 }
