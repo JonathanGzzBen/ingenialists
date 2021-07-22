@@ -5,34 +5,35 @@ import (
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
-	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 )
 
 type Server struct {
 	db           *gorm.DB
-	googleConfig oauth2.Config
+	googleClient IGoogleClient
+	googleConfig IGoogleConfig
+	development  bool
 	Router       *gin.Engine
 }
 
 type ServerConfig struct {
-	DB                 *gorm.DB
-	GoogleClientID     string
-	GoogleClientSecret string
-	Hostname           string
+	DB           *gorm.DB
+	GoogleClient IGoogleClient
+	GoogleConfig IGoogleConfig
+	Hostname     string
+	Development  bool
 }
 
 func NewServer(sc ServerConfig) *Server {
 	server := &Server{
-		db: sc.DB,
+		db:           sc.DB,
+		googleClient: sc.GoogleClient,
+		googleConfig: sc.GoogleConfig,
+		development:  sc.Development,
 	}
 	server.db.AutoMigrate(&models.Article{})
 	server.db.AutoMigrate(&models.Category{})
 	server.db.AutoMigrate(&models.User{})
-	server.SetupGoogleOAuth2(GoogleClientConfig{
-		ClientID:     sc.GoogleClientID,
-		ClientSecret: sc.GoogleClientSecret,
-	})
 
 	router := gin.Default()
 	v1 := router.Group("/v1")
@@ -48,6 +49,9 @@ func NewServer(sc ServerConfig) *Server {
 			ar.GET("/", server.GetCurrentUser)
 			ar.GET("/google-login", server.LoginGoogle)
 			ar.GET("/google-callback", server.GoogleCallback)
+			if sc.Development {
+				ar.GET("/dev-authorize", server.devOAuthAuthorize)
+			}
 		}
 		cr := v1.Group("/categories")
 		{

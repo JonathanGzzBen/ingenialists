@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
 // This data should not be modified, its purpose
@@ -98,7 +99,7 @@ func TestGetCategory(t *testing.T) {
 
 }
 
-func TestCreateCategory(t *testing.T) {
+func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	e := NewTestEnvironment()
 	defer e.Close()
 	ts := httptest.NewServer(e.Server.Router)
@@ -112,12 +113,17 @@ func TestCreateCategory(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	res, err := http.Post(fmt.Sprintf("%s/v1/categories", ts.URL), "application/json", bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/categories", ts.URL), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if res.StatusCode != 200 {
-		t.Fatalf("Expected status code 200, got %v", res.StatusCode)
+	req.Header.Add(server.AccessTokenName, "AccessToken")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
 	}
 
 	val, ok := res.Header["Content-Type"]
@@ -127,14 +133,4 @@ func TestCreateCategory(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
-	var resCategory models.Category
-	err = json.NewDecoder(res.Body).Decode(&resCategory)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if !reflect.DeepEqual(resCategory, mockCategory) {
-		t.Fatalf("Expected %v, got %v", mockCategory, resCategory)
-	}
-
 }

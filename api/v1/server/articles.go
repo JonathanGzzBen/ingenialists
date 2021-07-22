@@ -85,7 +85,7 @@ func (s *Server) GetArticle(c *gin.Context) {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [post]
 func (s *Server) CreateArticle(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create an article"})
@@ -145,7 +145,7 @@ func (s *Server) CreateArticle(c *gin.Context) {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [put]
 func (s *Server) UpdateArticle(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update an article"})
@@ -210,7 +210,7 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles/{id} [delete]
 func (s *Server) DeleteArticle(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to delete an article"})

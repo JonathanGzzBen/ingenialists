@@ -25,10 +25,11 @@ func NewTestEnvironment() *TestEnvironment {
 	}
 	server := server.NewServer(
 		server.ServerConfig{
-			DB:                 db,
-			GoogleClientID:     os.Getenv("ING_GOOGLE_CLIENT_ID"),
-			GoogleClientSecret: os.Getenv("ING_GOOGLE_CLIENT_SECRET"),
-			Hostname:           "http://localhost:8080",
+			DB:           db,
+			GoogleClient: &server.GoogleClientMock{},
+			GoogleConfig: &OAuth2ConfigMock{},
+			Hostname:     "http://localhost:8080",
+			Development:  true,
 		},
 	)
 	ts := &TestEnvironment{

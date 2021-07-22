@@ -2,54 +2,20 @@ package server
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/endpoints"
 )
 
 var (
-	state = "ingenialists"
-
+	state             = "ingenialists"
 	googleUserInfoURL = "https://www.googleapis.com/oauth2/v3/userinfo"
-	googleCallbackURL = "http://127.0.0.1:8080/v1/auth/google-callback"
-	gc                oauth2.Config
-
-	accessTokenName = "AccessToken"
+	googleConfig      IGoogleConfig
+	AccessTokenName   = "AccessToken"
 )
-
-type googleUserInfoResponse struct {
-	Sub           string `json:"sub"`
-	Name          string `json:"name"`
-	GivenName     string `json:"given_name"`
-	FamilyName    string `json:"family_name"`
-	Picture       string `json:"picture"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Locale        string `json:"locale"`
-}
-
-type GoogleClientConfig struct {
-	ClientID     string
-	ClientSecret string
-}
-
-// SetupGoogleOAuth2 initializes GoogleOAuth2 service
-// and is necessary to use auth service
-func (s *Server) SetupGoogleOAuth2(gcf GoogleClientConfig) {
-	gc = oauth2.Config{
-		ClientID:     gcf.ClientID,
-		ClientSecret: gcf.ClientSecret,
-		Endpoint:     endpoints.Google,
-		RedirectURL:  googleCallbackURL,
-		Scopes:       []string{"openid", "profile", "email"},
-	}
-	s.googleConfig = gc
-}
 
 // CurrentUser is the handler for GET requests to /auth
 // 	@ID GetCurrentUser
@@ -59,7 +25,7 @@ func (s *Server) SetupGoogleOAuth2(gcf GoogleClientConfig) {
 // 	@Security AccessToken
 // 	@Router /auth [get]
 func (s *Server) GetCurrentUser(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	u, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "invalid access token"})
@@ -71,7 +37,7 @@ func (s *Server) GetCurrentUser(c *gin.Context) {
 // LoginGoogle is the handler for GET requests to /auth/google-login
 // it's the entryway for Google OAuth2 flow.
 func (s *Server) LoginGoogle(c *gin.Context) {
-	url := gc.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	url := googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -87,13 +53,13 @@ func (s *Server) GoogleCallback(c *gin.Context) {
 
 	authCode := c.Request.URL.Query().Get("code")
 	ctx := context.Background()
-	token, err := gc.Exchange(ctx, authCode)
+	token, err := googleConfig.Exchange(ctx, authCode)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to exchange token: " + err.Error()})
 		return
 	}
 
-	uinfo, err := s.userInfoByAccessToken(token.AccessToken)
+	uinfo, err := s.googleClient.userInfoByAccessToken(token.AccessToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to get user info: " + err.Error()})
 		return
@@ -115,7 +81,10 @@ func (s *Server) GoogleCallback(c *gin.Context) {
 }
 
 func (s *Server) userByAccessToken(at string) (*models.User, error) {
-	ui, err := s.userInfoByAccessToken(at)
+	ui, err := s.googleClient.userInfoByAccessToken(at)
+	if s.development {
+		return &models.User{ID: 1, GoogleSub: ui.Sub, Name: ui.Name}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -127,17 +96,24 @@ func (s *Server) userByAccessToken(at string) (*models.User, error) {
 	return u, nil
 }
 
-// userInfoByAccessToken returns userInfo
-func (s *Server) userInfoByAccessToken(at string) (*googleUserInfoResponse, error) {
-	response, err := http.Get(googleUserInfoURL + "?access_token=" + at)
+// devOAuthAuthorize handles requests to /auth/authorize
+// should only be available during development
+func (s *Server) devOAuthAuthorize(c *gin.Context) {
+	state := c.Request.URL.Query().Get("state")
+
+	u, err := url.Parse("http:://localhost/callback")
 	if err != nil {
-		return nil, err
+		c.JSON(http.StatusInternalServerError,
+			models.APIError{
+				Code:    http.StatusInternalServerError,
+				Message: "could not make url",
+			})
 	}
-	if response.StatusCode != http.StatusOK {
-		return nil, errors.New("invalid access token")
-	}
-	defer response.Body.Close()
-	var uinfo *googleUserInfoResponse
-	json.NewDecoder(response.Body).Decode(&uinfo)
-	return uinfo, nil
+
+	v := url.Values{}
+	v.Set("code", "code")
+	v.Set("state", state)
+	u.RawQuery = v.Encode()
+
+	http.Redirect(c.Writer, c.Request, u.String(), http.StatusTemporaryRedirect)
 }

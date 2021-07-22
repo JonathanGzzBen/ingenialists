@@ -78,7 +78,7 @@ func (s *Server) GetCategory(c *gin.Context) {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories [post]
 func (s *Server) CreateCategory(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	u, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to create a category"})
@@ -116,7 +116,7 @@ func (s *Server) CreateCategory(c *gin.Context) {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories/{id} [put]
 func (s *Server) UpdateCategory(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	u, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to update a category"})
@@ -171,7 +171,7 @@ func (s *Server) UpdateCategory(c *gin.Context) {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories/{id} [delete]
 func (s *Server) DeleteCategory(c *gin.Context) {
-	at := c.GetHeader(accessTokenName)
+	at := c.GetHeader(AccessTokenName)
 	au, err := s.userByAccessToken(at)
 	if err != nil {
 		c.JSON(http.StatusForbidden, models.APIError{Code: http.StatusForbidden, Message: "you must be authenticated to delete a category"})
