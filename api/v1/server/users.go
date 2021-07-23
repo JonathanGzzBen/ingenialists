@@ -28,7 +28,7 @@ type UpdateUserDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /users [get]
 func (s *Server) GetAllUsers(c *gin.Context) {
-	var users models.User
+	var users []models.User
 	result := s.db.Find(&users)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not connect to database"})
