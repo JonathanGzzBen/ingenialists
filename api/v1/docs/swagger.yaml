@@ -1,66 +1,5 @@
 basePath: /v1
 definitions:
-  controllers.CreateArticleDTO:
-    properties:
-      body:
-        type: string
-      categoryId:
-        type: integer
-      imageUrl:
-        type: string
-      tags:
-        type: string
-      title:
-        type: string
-    type: object
-  controllers.CreateCategoryDTO:
-    properties:
-      imageUrl:
-        type: string
-      name:
-        type: string
-    type: object
-  controllers.UpdateArticleDTO:
-    properties:
-      body:
-        type: string
-      categoryId:
-        type: integer
-      imageUrl:
-        type: string
-      tags:
-        type: string
-      title:
-        type: string
-    type: object
-  controllers.UpdateCategoryDTO:
-    properties:
-      imageUrl:
-        type: string
-      name:
-        type: string
-    type: object
-  controllers.UpdateUserDTO:
-    properties:
-      birthdate:
-        example: "2006-01-02T15:04:05Z"
-        type: string
-      description:
-        type: string
-      gender:
-        type: string
-      name:
-        type: string
-      profilePictureUrl:
-        type: string
-      role:
-        example: Reader
-        type: string
-      shortDescription:
-        type: string
-    required:
-    - name
-    type: object
   models.APIError:
     properties:
       code:
@@ -126,6 +65,67 @@ definitions:
       shortDescription:
         type: string
     type: object
+  server.CreateArticleDTO:
+    properties:
+      body:
+        type: string
+      categoryId:
+        type: integer
+      imageUrl:
+        type: string
+      tags:
+        type: string
+      title:
+        type: string
+    type: object
+  server.CreateCategoryDTO:
+    properties:
+      imageUrl:
+        type: string
+      name:
+        type: string
+    type: object
+  server.UpdateArticleDTO:
+    properties:
+      body:
+        type: string
+      categoryId:
+        type: integer
+      imageUrl:
+        type: string
+      tags:
+        type: string
+      title:
+        type: string
+    type: object
+  server.UpdateCategoryDTO:
+    properties:
+      imageUrl:
+        type: string
+      name:
+        type: string
+    type: object
+  server.UpdateUserDTO:
+    properties:
+      birthdate:
+        example: "2006-01-02T15:04:05Z"
+        type: string
+      description:
+        type: string
+      gender:
+        type: string
+      name:
+        type: string
+      profilePictureUrl:
+        type: string
+      role:
+        example: Reader
+        type: string
+      shortDescription:
+        type: string
+    required:
+    - name
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -166,7 +166,7 @@ paths:
         name: article
         required: true
         schema:
-          $ref: '#/definitions/controllers.CreateArticleDTO'
+          $ref: '#/definitions/server.CreateArticleDTO'
       responses:
         "200":
           description: OK
@@ -260,7 +260,7 @@ paths:
         name: article
         required: true
         schema:
-          $ref: '#/definitions/controllers.UpdateArticleDTO'
+          $ref: '#/definitions/server.UpdateArticleDTO'
       responses:
         "200":
           description: OK
@@ -330,7 +330,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/controllers.CreateCategoryDTO'
+          $ref: '#/definitions/server.CreateCategoryDTO'
       responses:
         "200":
           description: OK
@@ -424,7 +424,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/controllers.UpdateCategoryDTO'
+          $ref: '#/definitions/server.UpdateCategoryDTO'
       responses:
         "200":
           description: OK
@@ -505,7 +505,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/controllers.UpdateUserDTO'
+          $ref: '#/definitions/server.UpdateUserDTO'
       responses:
         "200":
           description: OK
