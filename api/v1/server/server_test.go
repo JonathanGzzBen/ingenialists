@@ -26,7 +26,6 @@ func NewTestEnvironment() *TestEnvironment {
 	server := server.NewServer(
 		server.ServerConfig{
 			DB:           db,
-			GoogleClient: &server.GoogleClientMock{},
 			GoogleConfig: &OAuth2ConfigMock{},
 			Hostname:     "http://localhost:8080",
 			Development:  true,

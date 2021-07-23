@@ -13,9 +13,13 @@ import (
 var (
 	state             = "ingenialists"
 	googleUserInfoURL = "https://www.googleapis.com/oauth2/v3/userinfo"
-	googleConfig      IGoogleConfig
 	AccessTokenName   = "AccessToken"
 )
+
+type IOauthConfig interface {
+	AuthCodeURL(string, ...oauth2.AuthCodeOption) string
+	Exchange(context.Context, string, ...oauth2.AuthCodeOption) (*oauth2.Token, error)
+}
 
 // CurrentUser is the handler for GET requests to /auth
 // 	@ID GetCurrentUser
@@ -37,7 +41,7 @@ func (s *Server) GetCurrentUser(c *gin.Context) {
 // LoginGoogle is the handler for GET requests to /auth/google-login
 // it's the entryway for Google OAuth2 flow.
 func (s *Server) LoginGoogle(c *gin.Context) {
-	url := googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	url := s.googleConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -53,7 +57,7 @@ func (s *Server) GoogleCallback(c *gin.Context) {
 
 	authCode := c.Request.URL.Query().Get("code")
 	ctx := context.Background()
-	token, err := googleConfig.Exchange(ctx, authCode)
+	token, err := s.googleConfig.Exchange(ctx, authCode)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, &models.APIError{Code: http.StatusBadRequest, Message: "failed to exchange token: " + err.Error()})
 		return

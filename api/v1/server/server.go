@@ -11,15 +11,14 @@ import (
 type Server struct {
 	db           *gorm.DB
 	googleClient IGoogleClient
-	googleConfig IGoogleConfig
+	googleConfig IOauthConfig
 	development  bool
 	Router       *gin.Engine
 }
 
 type ServerConfig struct {
 	DB           *gorm.DB
-	GoogleClient IGoogleClient
-	GoogleConfig IGoogleConfig
+	GoogleConfig IOauthConfig
 	Hostname     string
 	Development  bool
 }
@@ -27,9 +26,13 @@ type ServerConfig struct {
 func NewServer(sc ServerConfig) *Server {
 	server := &Server{
 		db:           sc.DB,
-		googleClient: sc.GoogleClient,
 		googleConfig: sc.GoogleConfig,
 		development:  sc.Development,
+	}
+	if sc.Development {
+		server.googleClient = &GoogleClientMock{}
+	} else {
+		server.googleClient = &GoogleClient{}
 	}
 	server.db.AutoMigrate(&models.Article{})
 	server.db.AutoMigrate(&models.Category{})
