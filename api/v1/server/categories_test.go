@@ -107,6 +107,7 @@ func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 
 	e.DB.Create(&mockCategories)
 	mockCategory := mockCategories[1]
+	mockCategory.ID = 0
 
 	mcJSONBytes, err := json.Marshal(mockCategory)
 	if err != nil {
@@ -133,4 +134,80 @@ func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
+}
+
+func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+	mockCategory.ID = 0
+
+	mcJSONBytes, err := json.Marshal(mockCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/categories", ts.URL), bytes.NewBuffer(mcJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Writer")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+}
+
+func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+	mockCategory.ID = 0
+
+	mcJSONBytes, err := json.Marshal(mockCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/categories", ts.URL), bytes.NewBuffer(mcJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Administrator")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status code %v, got %v", http.StatusOK, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
 }
