@@ -330,3 +330,116 @@ func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", mockCategory.Name, cInDB.Name)
 	}
 }
+
+func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Access Token")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+	// Verify that mockCategory is still in database
+	var cInDB *models.Category
+	e.DB.Find(&cInDB, mockCategory.ID)
+	if *cInDB != mockCategory {
+		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
+	}
+}
+
+func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Writer")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+	// Verify that mockCategory is still in database
+	var cInDB *models.Category
+	e.DB.Find(&cInDB, mockCategory.ID)
+	if *cInDB != mockCategory {
+		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
+	}
+}
+func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Administrator")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("Expected status code %v, got %v", http.StatusNoContent, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "text/plain; charset=utf-8" {
+		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
+	}
+
+	// Verify that mockCategory is not in database
+	var cInDB *models.Category
+	tx := e.DB.Find(&cInDB, mockCategory.ID)
+	if tx.RowsAffected != 0 {
+		t.Fatalf("Expected %v rows affected, got %v", 0, tx.RowsAffected)
+	}
+}
