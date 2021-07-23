@@ -211,3 +211,122 @@ func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
 	}
 
 }
+
+func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+	mockCategory.Name = "Category Updated"
+
+	mcJSONBytes, err := json.Marshal(mockCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "AccessToken")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+}
+
+func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+	mockCategory.Name = "Category Updated"
+
+	mcJSONBytes, err := json.Marshal(mockCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Writer")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+}
+
+func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	mockCategory := mockCategories[1]
+	mockCategory.Name = "Category Updated"
+
+	mcJSONBytes, err := json.Marshal(mockCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Administrator")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status code %v, got %v", http.StatusOK, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+	var cInDB models.Category
+	e.DB.Find(&cInDB, mockCategory.ID)
+	if cInDB.Name != mockCategory.Name {
+		t.Fatalf("Expected %v, got %v", mockCategory.Name, cInDB.Name)
+	}
+}
