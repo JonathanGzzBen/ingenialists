@@ -77,7 +77,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.CreateArticleDTO"
+                            "$ref": "#/definitions/server.CreateArticleDTO"
                         }
                     }
                 ],
@@ -173,7 +173,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.UpdateArticleDTO"
+                            "$ref": "#/definitions/server.UpdateArticleDTO"
                         }
                     }
                 ],
@@ -331,7 +331,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.CreateCategoryDTO"
+                            "$ref": "#/definitions/server.CreateCategoryDTO"
                         }
                     }
                 ],
@@ -427,7 +427,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.UpdateCategoryDTO"
+                            "$ref": "#/definitions/server.UpdateCategoryDTO"
                         }
                     }
                 ],
@@ -598,7 +598,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.UpdateUserDTO"
+                            "$ref": "#/definitions/server.UpdateUserDTO"
                         }
                     }
                 ],
@@ -620,99 +620,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "controllers.CreateArticleDTO": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "categoryId": {
-                    "type": "integer"
-                },
-                "imageUrl": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.CreateCategoryDTO": {
-            "type": "object",
-            "properties": {
-                "imageUrl": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.UpdateArticleDTO": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "categoryId": {
-                    "type": "integer"
-                },
-                "imageUrl": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.UpdateCategoryDTO": {
-            "type": "object",
-            "properties": {
-                "imageUrl": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.UpdateUserDTO": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "birthdate": {
-                    "type": "string",
-                    "example": "2006-01-02T15:04:05Z"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "profilePictureUrl": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string",
-                    "example": "Reader"
-                },
-                "shortDescription": {
-                    "type": "string"
-                }
-            }
-        },
         "models.APIError": {
             "type": "object",
             "properties": {
@@ -794,6 +701,99 @@ var doc = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "profilePictureUrl": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "Reader"
+                },
+                "shortDescription": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.CreateArticleDTO": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "categoryId": {
+                    "type": "integer"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.CreateCategoryDTO": {
+            "type": "object",
+            "properties": {
+                "imageUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.UpdateArticleDTO": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "categoryId": {
+                    "type": "integer"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.UpdateCategoryDTO": {
+            "type": "object",
+            "properties": {
+                "imageUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.UpdateUserDTO": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "birthdate": {
+                    "type": "string",
+                    "example": "2006-01-02T15:04:05Z"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
