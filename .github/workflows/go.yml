@@ -18,10 +18,11 @@ jobs:
       with:
         go-version: 1.16
 
+    - name: Update Swagger Docs V1
+      run: ./scripts/update_swagger_docs_v1.sh
+
     - name: Build
-      run: |
-        cd api/v1
-        go build -v ./...
+      run: ./scripts/build_api_v1.sh
 
     - name: Test
       run: |
