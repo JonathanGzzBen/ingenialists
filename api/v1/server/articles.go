@@ -34,7 +34,7 @@ type UpdateArticleDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [get]
 func (s *Server) GetAllArticles(c *gin.Context) {
-	var a models.Article
+	var a []models.Article
 	r := s.db.Preload(clause.Associations).Find(&a)
 	if r.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get articles"})
