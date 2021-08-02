@@ -34,7 +34,7 @@ type UpdateArticleDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [get]
 func (s *Server) GetAllArticles(c *gin.Context) {
-	var a models.Article
+	var a []models.Article
 	r := s.db.Preload(clause.Associations).Find(&a)
 	if r.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get articles"})
@@ -59,8 +59,8 @@ func (s *Server) GetArticle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
-	var category models.Category
-	res := s.db.Find(&category, id)
+	var article models.Article
+	res := s.db.Find(&article, id)
 	if res.Error == nil && res.RowsAffected != 1 {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
@@ -69,7 +69,7 @@ func (s *Server) GetArticle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not find category"})
 		return
 	}
-	c.JSON(http.StatusOK, category)
+	c.JSON(http.StatusOK, article)
 }
 
 // CreateArticles is the handler for POST requests to /articles
