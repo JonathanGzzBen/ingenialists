@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
 var mockArticles = []models.Article{
@@ -108,5 +110,190 @@ func TestGetArticle(t *testing.T) {
 	}
 	if !reflect.DeepEqual(resArticle, mockArticle) {
 		t.Fatalf("Expected %v, got %v", mockArticle, resArticle)
+	}
+}
+
+func TestCreateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	e.DB.Create(&mockUsers)
+	e.DB.Create(&mockArticles)
+	mockArticle := models.Article{
+		UserID:     mockUsers[1].ID,
+		CategoryID: mockCategories[1].ID,
+		Title:      "New Article",
+	}
+
+	maJSONBytes, err := json.Marshal(mockArticle)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/articles", ts.URL), bytes.NewBuffer(maJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+}
+
+func TestCreateArticleAsReaderReturnForbidden(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	e.DB.Create(&mockUsers)
+	e.DB.Create(&mockArticles)
+	mockArticle := models.Article{
+		UserID:     mockUsers[1].ID,
+		CategoryID: mockCategories[1].ID,
+		Title:      "New Article",
+	}
+
+	maJSONBytes, err := json.Marshal(mockArticle)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/articles", ts.URL), bytes.NewBuffer(maJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Reader")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("Expected status code %v, got %v", http.StatusForbidden, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+}
+
+func TestCreateArticleAsWriterReturnOk(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	e.DB.Create(&mockUsers)
+	e.DB.Create(&mockArticles)
+	mockArticle := models.Article{
+		UserID:     mockUsers[1].ID,
+		CategoryID: mockCategories[1].ID,
+		Title:      "New Article",
+	}
+
+	maJSONBytes, err := json.Marshal(mockArticle)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/articles", ts.URL), bytes.NewBuffer(maJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Writer")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status code %v, got %v", http.StatusOK, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+	var resArticle models.Article
+	err = json.NewDecoder(res.Body).Decode(&resArticle)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if resArticle.Title != mockArticle.Title {
+		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	}
+}
+
+func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
+	e := NewTestEnvironment()
+	defer e.Close()
+	ts := httptest.NewServer(e.Server.Router)
+	defer ts.Close()
+
+	e.DB.Create(&mockCategories)
+	e.DB.Create(&mockUsers)
+	e.DB.Create(&mockArticles)
+	mockArticle := models.Article{
+		UserID:     mockUsers[1].ID,
+		CategoryID: mockCategories[1].ID,
+		Title:      "New Article",
+	}
+
+	maJSONBytes, err := json.Marshal(mockArticle)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/articles", ts.URL), bytes.NewBuffer(maJSONBytes))
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	req.Header.Add(server.AccessTokenName, "Administrator")
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Expected status code %v, got %v", http.StatusOK, res.StatusCode)
+	}
+
+	val, ok := res.Header["Content-Type"]
+	if !ok {
+		t.Fatalf("Expected Content-Type header to be set")
+	}
+	if val[0] != "application/json; charset=utf-8" {
+		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
+	}
+
+	var resArticle models.Article
+	err = json.NewDecoder(res.Body).Decode(&resArticle)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if resArticle.Title != mockArticle.Title {
+		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
 	}
 }
