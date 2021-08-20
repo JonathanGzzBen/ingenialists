@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	repositories "github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -16,6 +17,7 @@ type Server struct {
 	development    bool
 	Router         *gin.Engine
 	CategoriesRepo repositories.CategoriesRepository
+	UsersRepo      repository.UsersRepository
 }
 
 type ServerConfig struct {
@@ -24,6 +26,7 @@ type ServerConfig struct {
 	Hostname       string
 	Development    bool
 	CategoriesRepo repositories.CategoriesRepository
+	UsersRepo      repository.UsersRepository
 }
 
 func NewServer(sc ServerConfig) *Server {
@@ -32,6 +35,7 @@ func NewServer(sc ServerConfig) *Server {
 		googleConfig:   sc.GoogleConfig,
 		development:    sc.Development,
 		CategoriesRepo: sc.CategoriesRepo,
+		UsersRepo:      sc.UsersRepo,
 	}
 	if sc.Development {
 		server.googleClient = &GoogleClientMock{}

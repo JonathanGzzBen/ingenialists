@@ -3,7 +3,7 @@ package server_test
 import (
 	"os"
 
-	repositories "github.com/JonathanGzzBen/ingenialists/api/v1/repository"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -30,7 +30,8 @@ func NewTestEnvironment() *TestEnvironment {
 			GoogleConfig:   &OAuth2ConfigMock{},
 			Hostname:       "http://localhost:8080",
 			Development:    true,
-			CategoriesRepo: repositories.NewCategoriesGormRepository(db),
+			CategoriesRepo: repository.NewCategoriesGormRepository(db),
+			UsersRepo:      repository.NewUsersGormRepository(db),
 		},
 	)
 	ts := &TestEnvironment{

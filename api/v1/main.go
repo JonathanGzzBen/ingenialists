@@ -4,7 +4,7 @@ import (
 	"os"
 
 	_ "github.com/JonathanGzzBen/ingenialists/api/v1/docs"
-	repository "github.com/JonathanGzzBen/ingenialists/api/v1/repository"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
@@ -42,7 +42,6 @@ func main() {
 	if err != nil {
 		panic("Could not connect to database")
 	}
-	categoriesRepo := repository.NewCategoriesGormRepository(db)
 	serverConfig := server.ServerConfig{
 		DB: db,
 		GoogleConfig: &oauth2.Config{
@@ -52,7 +51,8 @@ func main() {
 			RedirectURL:  "http://127.0.0.1:8080/v1/auth/google-callback",
 			Scopes:       []string{"openid", "profile", "email"},
 		},
-		CategoriesRepo: categoriesRepo,
+		CategoriesRepo: repository.NewCategoriesGormRepository(db),
+		UsersRepo:      repository.NewUsersGormRepository(db),
 	}
 	// hostname is used by multiple controllers
 	// to make requests to authentication controller
