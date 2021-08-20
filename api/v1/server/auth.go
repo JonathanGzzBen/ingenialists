@@ -69,16 +69,14 @@ func (s *Server) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	var u models.User
-	res := s.db.Where("google_sub = ? ", uinfo.Sub).First(&u)
-	// If there is no user with that sub, create one
-	if res.Error != nil {
-		u = models.User{
+	_, err = s.UsersRepo.GetUserByGoogleSub(uinfo.Sub)
+	if err != nil {
+		u := &models.User{
 			GoogleSub:         uinfo.Sub,
 			ProfilePictureURL: uinfo.Picture,
 			Name:              uinfo.Name,
 		}
-		s.db.Save(&u)
+		s.UsersRepo.CreateUser(u)
 	}
 
 	c.JSON(http.StatusOK, token)
@@ -101,9 +99,8 @@ func (s *Server) userByAccessToken(at string) (*models.User, error) {
 		}
 		return &models.User{ID: 1, GoogleSub: ui.Sub, Name: ui.Name, Role: role}, nil
 	}
-	var u *models.User
-	res := s.db.Where("google_sub = ? ", ui.Sub).First(&u)
-	if res.Error != nil {
+	u, err := s.UsersRepo.GetUserByGoogleSub(ui.Sub)
+	if err != nil {
 		return nil, err
 	}
 	return u, nil

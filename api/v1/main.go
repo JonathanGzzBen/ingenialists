@@ -4,6 +4,7 @@ import (
 	"os"
 
 	_ "github.com/JonathanGzzBen/ingenialists/api/v1/docs"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
@@ -42,7 +43,6 @@ func main() {
 		panic("Could not connect to database")
 	}
 	serverConfig := server.ServerConfig{
-		DB: db,
 		GoogleConfig: &oauth2.Config{
 			ClientID:     os.Getenv("ING_GOOGLE_CLIENT_ID"),
 			ClientSecret: os.Getenv("ING_GOOGLE_CLIENT_SECRET"),
@@ -50,6 +50,9 @@ func main() {
 			RedirectURL:  "http://127.0.0.1:8080/v1/auth/google-callback",
 			Scopes:       []string{"openid", "profile", "email"},
 		},
+		CategoriesRepo: repository.NewCategoriesGormRepository(db),
+		UsersRepo:      repository.NewUsersGormRepository(db),
+		ArticlesRepo:   repository.NewArticlesGormRepository(db),
 	}
 	// hostname is used by multiple controllers
 	// to make requests to authentication controller

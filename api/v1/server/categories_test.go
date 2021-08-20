@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
@@ -23,12 +25,12 @@ var mockCategories = []models.Category{
 }
 
 func TestGetAllCategories(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetAllCategories").Return(mockCategories, nil)
+	s := NewTestServer()
+	s.CategoriesRepo = mockCategoriesRepo
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
-
-	e.DB.Create(&mockCategories)
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/categories", ts.URL))
 	if err != nil {
@@ -60,12 +62,14 @@ func TestGetAllCategories(t *testing.T) {
 }
 
 func TestGetCategory(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+
 	// Take second category to make sure it's finding
 	// it by the ID and not the first item in DB
 	mockCategory := mockCategories[1]
@@ -100,12 +104,13 @@ func TestGetCategory(t *testing.T) {
 }
 
 func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 	mockCategory.ID = 0
 
@@ -137,12 +142,13 @@ func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 }
 
 func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 	mockCategory.ID = 0
 
@@ -175,12 +181,13 @@ func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
 }
 
 func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 	mockCategory.ID = 0
 
@@ -213,12 +220,13 @@ func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
 }
 
 func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 	mockCategory.Name = "Category Updated"
 
@@ -251,12 +259,13 @@ func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 }
 
 func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 	mockCategory.Name = "Category Updated"
 
@@ -289,12 +298,13 @@ func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
 }
 
 func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 	mockCategory.Name = "Category Updated"
 
@@ -324,20 +334,23 @@ func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	var cInDB models.Category
-	e.DB.Find(&cInDB, mockCategory.ID)
+	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if cInDB.Name != mockCategory.Name {
 		t.Fatalf("Expected %v, got %v", mockCategory.Name, cInDB.Name)
 	}
 }
 
 func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -362,20 +375,23 @@ func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	}
 
 	// Verify that mockCategory is still in database
-	var cInDB *models.Category
-	e.DB.Find(&cInDB, mockCategory.ID)
+	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if *cInDB != mockCategory {
 		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
 	}
 }
 
 func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -400,19 +416,23 @@ func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
 	}
 
 	// Verify that mockCategory is still in database
-	var cInDB *models.Category
-	e.DB.Find(&cInDB, mockCategory.ID)
+	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if *cInDB != mockCategory {
 		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
 	}
 }
+
 func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -437,9 +457,9 @@ func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
 	}
 
 	// Verify that mockCategory is not in database
-	var cInDB *models.Category
-	tx := e.DB.Find(&cInDB, mockCategory.ID)
-	if tx.RowsAffected != 0 {
-		t.Fatalf("Expected %v rows affected, got %v", 0, tx.RowsAffected)
+	_, err = s.CategoriesRepo.GetCategory(mockCategory.ID)
+	if err != repository.ErrNotFound {
+		t.Fatalf("Expected %v , got %v", repository.ErrNotFound, err)
+
 	}
 }

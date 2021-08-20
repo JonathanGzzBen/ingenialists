@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,9 +29,8 @@ type UpdateUserDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /users [get]
 func (s *Server) GetAllUsers(c *gin.Context) {
-	var users []models.User
-	result := s.db.Find(&users)
-	if result.Error != nil {
+	users, err := s.UsersRepo.GetAllUsers()
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not connect to database"})
 		return
 	}
@@ -52,17 +52,16 @@ func (s *Server) GetUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
-	var u models.User
-	res := s.db.Find(&u, id)
-	if res.Error != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: res.Error.Error()})
-		return
-	}
-	if res.RowsAffected != 1 {
+	user, err := s.UsersRepo.GetUser(uint(id))
+	if err == repository.ErrNotFound {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "user with provided id not found"})
 		return
 	}
-	c.JSON(http.StatusOK, u)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }
 
 // UpdateUser is the handler for PUT requests to /users/:id
@@ -99,12 +98,15 @@ func (s *Server) UpdateUser(c *gin.Context) {
 	}
 	// If administrator is updating other user
 	if au.Role == models.RoleAdministrator && uint(id) != au.ID {
-		var u models.User
-		s.db.First(&u, id)
+		u, err := s.UsersRepo.GetUser(uint(id))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: err.Error()})
+			return
+		}
 		// Administrators can only change Role of other users
 		u.Role = uu.Role
-		res := s.db.Save(&u)
-		if res.Error != nil {
+		u, err = s.UsersRepo.UpdateUser(u)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
 			return
 		}
@@ -112,17 +114,20 @@ func (s *Server) UpdateUser(c *gin.Context) {
 		return
 	}
 	// User is updating his own information
-	var u models.User
-	s.db.First(&u, au.ID)
+	u, err := s.UsersRepo.GetUser(uint(id))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "not registered user"})
+		return
+	}
 	u.Name = uu.Name
 	u.Birthdate = uu.Birthdate
 	u.Gender = uu.Gender
 	u.ProfilePictureURL = uu.ProfilePictureURL
 	u.Description = uu.Description
 	u.ShortDescription = uu.ShortDescription
-	res := s.db.Save(&u)
-	if res.Error != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: "could not update user: " + err.Error()})
+	u, err = s.UsersRepo.UpdateUser(u)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusNotFound, Message: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, u)

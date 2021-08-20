@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm/clause"
 )
 
 type CreateArticleDTO struct {
@@ -34,13 +34,12 @@ type UpdateArticleDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /articles [get]
 func (s *Server) GetAllArticles(c *gin.Context) {
-	var a models.Article
-	r := s.db.Preload(clause.Associations).Find(&a)
-	if r.Error != nil {
+	articles, err := s.ArticlesRepo.GetAllArticles()
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get articles"})
 		return
 	}
-	c.JSON(http.StatusOK, a)
+	c.JSON(http.StatusOK, articles)
 }
 
 // GetArticle is the handler for GET requests to /article/:id
@@ -59,17 +58,16 @@ func (s *Server) GetArticle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
-	var category models.Category
-	res := s.db.Find(&category, id)
-	if res.Error == nil && res.RowsAffected != 1 {
+	article, err := s.ArticlesRepo.GetArticle(uint(id))
+	if err == repository.ErrNotFound {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
 	}
-	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not find category"})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, category)
+	c.JSON(http.StatusOK, article)
 }
 
 // CreateArticles is the handler for POST requests to /articles
@@ -102,14 +100,13 @@ func (s *Server) CreateArticle(c *gin.Context) {
 	}
 
 	// Verify that a category with matching ID exists
-	var category models.Category
-	res := s.db.Find(&category, ca.CategoryID)
-	if res.Error != nil || res.RowsAffected != 1 {
+	_, err = s.CategoriesRepo.GetCategory(ca.CategoryID)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "category with provided id could not be retrieved"})
 		return
 	}
 
-	article := models.Article{
+	article := &models.Article{
 		UserID:     au.ID,
 		CategoryID: ca.CategoryID,
 		Body:       ca.Body,
@@ -117,14 +114,9 @@ func (s *Server) CreateArticle(c *gin.Context) {
 		ImageURL:   ca.ImageURL,
 		Tags:       ca.Tags,
 	}
-	res = s.db.Create(&article)
-	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create article: " + res.Error.Error()})
-		return
-	}
-	res = s.db.Preload(clause.Associations).Find(&article, article.ID)
-	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not retrieve created article: " + res.Error.Error()})
+	article, err = s.ArticlesRepo.CreateArticle(article)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create article: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, article)
@@ -156,14 +148,13 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
-	var article models.Article
-	res := s.db.Find(&article, id)
-	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
+	article, err := s.ArticlesRepo.GetArticle(uint(id))
+	if err == repository.ErrNotFound {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article with provided id not found"})
 		return
 	}
-	if res.RowsAffected != 1 {
-		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article with provided id not found"})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: err.Error()})
 		return
 	}
 
@@ -184,14 +175,10 @@ func (s *Server) UpdateArticle(c *gin.Context) {
 	article.ImageURL = ua.ImageURL
 	article.Tags = ua.Tags
 
-	res = s.db.Save(&article)
-	if res.Error != nil {
+	article, err = s.ArticlesRepo.UpdateArticle(article)
+
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not save updated article: " + err.Error()})
-		return
-	}
-	res = s.db.Preload(clause.Associations).Find(&article, article.ID)
-	if res.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not retrieve updated article: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, article)
@@ -222,10 +209,9 @@ func (s *Server) DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	var article models.Article
-	res := s.db.Find(&article, id)
-	if res.Error != nil || res.RowsAffected != 1 {
-		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "article not found"})
+	article, err := s.ArticlesRepo.GetArticle(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: err.Error()})
 		return
 	}
 
@@ -236,8 +222,8 @@ func (s *Server) DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	res = s.db.Delete(&article)
-	if res.Error != nil {
+	err = s.ArticlesRepo.DeleteArticle(uint(id))
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article: " + err.Error()})
 		return
 	}
