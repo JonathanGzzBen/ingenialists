@@ -1,16 +1,13 @@
 package server
 
 import (
-	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
-	"gorm.io/gorm"
 )
 
 type Server struct {
-	db             *gorm.DB
 	googleClient   IGoogleClient
 	googleConfig   IOauthConfig
 	development    bool
@@ -21,7 +18,6 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	DB             *gorm.DB
 	GoogleConfig   IOauthConfig
 	Hostname       string
 	Development    bool
@@ -32,7 +28,6 @@ type ServerConfig struct {
 
 func NewServer(sc ServerConfig) *Server {
 	server := &Server{
-		db:             sc.DB,
 		googleConfig:   sc.GoogleConfig,
 		development:    sc.Development,
 		CategoriesRepo: sc.CategoriesRepo,
@@ -44,9 +39,6 @@ func NewServer(sc ServerConfig) *Server {
 	} else {
 		server.googleClient = &GoogleClient{}
 	}
-	server.db.AutoMigrate(&models.Article{})
-	server.db.AutoMigrate(&models.Category{})
-	server.db.AutoMigrate(&models.User{})
 
 	router := gin.Default()
 	v1 := router.Group("/v1")

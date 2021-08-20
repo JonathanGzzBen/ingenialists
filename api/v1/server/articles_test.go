@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
@@ -38,12 +38,19 @@ var mockArticles = []models.Article{
 }
 
 func TestGetAllArticles(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/articles", ts.URL))
 	if err != nil {
@@ -75,12 +82,19 @@ func TestGetAllArticles(t *testing.T) {
 }
 
 func TestGetArticle(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
 
 	mockArticle := mockArticles[1]
 
@@ -108,20 +122,26 @@ func TestGetArticle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if !reflect.DeepEqual(resArticle, mockArticle) {
-		t.Fatalf("Expected %v, got %v", mockArticle, resArticle)
+	if resArticle.Title != mockArticle.Title {
+		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
 	}
 }
 
 func TestCreateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := models.Article{
 		UserID:     mockUsers[1].ID,
 		CategoryID: mockCategories[1].ID,
@@ -155,14 +175,20 @@ func TestCreateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 }
 
 func TestCreateArticleAsReaderReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := models.Article{
 		UserID:     mockUsers[1].ID,
 		CategoryID: mockCategories[1].ID,
@@ -197,14 +223,20 @@ func TestCreateArticleAsReaderReturnForbidden(t *testing.T) {
 }
 
 func TestCreateArticleAsWriterReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := models.Article{
 		UserID:     mockUsers[1].ID,
 		CategoryID: mockCategories[1].ID,
@@ -248,14 +280,20 @@ func TestCreateArticleAsWriterReturnOk(t *testing.T) {
 }
 
 func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := models.Article{
 		UserID:     mockUsers[1].ID,
 		CategoryID: mockCategories[1].ID,
@@ -299,14 +337,20 @@ func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
 }
 
 func TestUpdateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 	mockArticle.Title = "Article Updated"
 
@@ -337,14 +381,20 @@ func TestUpdateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 }
 
 func TestUpdateArticleAsReaderReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 	mockArticle.Title = "Article Updated"
 
@@ -376,15 +426,21 @@ func TestUpdateArticleAsReaderReturnForbidden(t *testing.T) {
 }
 
 func TestUpdateArticleAsWriterThatOwnsArticleReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
 	mockArticles[1].UserID = 1
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 	mockArticle.Title = "Article Updated"
 
@@ -416,15 +472,21 @@ func TestUpdateArticleAsWriterThatOwnsArticleReturnOk(t *testing.T) {
 }
 
 func TestUpdateArticleAsWriterThatDoesNotOwnArticleReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
 	mockArticles[1].UserID = 2
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 	mockArticle.Title = "Article Updated"
 
@@ -456,15 +518,21 @@ func TestUpdateArticleAsWriterThatDoesNotOwnArticleReturnOk(t *testing.T) {
 }
 
 func TestUpdateArticleAsAdministratorThatOwnsArticleReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
 	mockArticles[1].UserID = 1
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 	mockArticle.Title = "Article Updated"
 
@@ -496,15 +564,21 @@ func TestUpdateArticleAsAdministratorThatOwnsArticleReturnOk(t *testing.T) {
 }
 
 func TestUpdateArticleAsAdministratorThatDoesNotOwnArticleReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	mockArticles[1].UserID = 2
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 2
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 	mockArticle.Title = "Article Updated"
 
@@ -536,14 +610,20 @@ func TestUpdateArticleAsAdministratorThatDoesNotOwnArticleReturnOk(t *testing.T)
 }
 
 func TestDeleteArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
@@ -566,23 +646,31 @@ func TestDeleteArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is still in database
-	var aInDB *models.Article
-	e.DB.Find(&aInDB, mockArticle.ID)
+	// Verify that mockArticle is still in database
+	aInDB, err := s.ArticlesRepo.GetArticle(mockArticle.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if aInDB.Title != mockArticle.Title {
 		t.Fatalf("Expected %v, got %v", mockArticle.Title, aInDB.Title)
 	}
 }
 
 func TestDeleteArticleAsReaderReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
@@ -606,24 +694,32 @@ func TestDeleteArticleAsReaderReturnForbidden(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is still in database
-	var aInDB *models.Article
-	e.DB.Find(&aInDB, mockArticle.ID)
+	// Verify that mockArticle is still in database
+	aInDB, err := s.ArticlesRepo.GetArticle(mockArticle.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if aInDB.Title != mockArticle.Title {
 		t.Fatalf("Expected %v, got %v", mockArticle.Title, aInDB.Title)
 	}
 }
 
 func TestDeleteArticleAsWriterThatDoesNotOwnArticleReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	mockArticles[1].UserID = 2
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 2
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
@@ -647,25 +743,34 @@ func TestDeleteArticleAsWriterThatDoesNotOwnArticleReturnForbidden(t *testing.T)
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is still in database
-	var aInDB *models.Article
-	e.DB.Find(&aInDB, mockArticle.ID)
+	// Verify that mockArticle is still in database
+	aInDB, err := s.ArticlesRepo.GetArticle(mockArticle.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if aInDB.Title != mockArticle.Title {
 		t.Fatalf("Expected %v, got %v", mockArticle.Title, aInDB.Title)
 	}
 }
 
 func TestDeleteArticleAsWriterThatOwnsArticleReturnNoContent(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
 	mockArticles[1].UserID = 1
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
+	mockArticle.UserID = 1
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
 	if err != nil {
@@ -688,24 +793,29 @@ func TestDeleteArticleAsWriterThatOwnsArticleReturnNoContent(t *testing.T) {
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is not in database
-	var aInDB *models.Article
-	tx := e.DB.Find(&aInDB, mockArticle.ID)
-	if tx.RowsAffected != 0 {
-		t.Fatalf("Expected %v, got %v", 0, tx.RowsAffected)
+	// Verify that mockArticle is not in database
+	_, err = s.ArticlesRepo.GetArticle(mockArticle.ID)
+	if err != repository.ErrNotFound {
+		t.Fatalf("Expected %v, got %v", repository.ErrNotFound, err)
 	}
 }
 
 func TestDeleteArticleAsAdministratorThatDoesNotOwnArticleReturnNoContent(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	mockArticles[1].UserID = 2
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 2
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
@@ -729,24 +839,29 @@ func TestDeleteArticleAsAdministratorThatDoesNotOwnArticleReturnNoContent(t *tes
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is not in database
-	var aInDB *models.Article
-	tx := e.DB.Find(&aInDB, mockArticle.ID)
-	if tx.RowsAffected != 0 {
-		t.Fatalf("Expected %v, got %v", 0, tx.RowsAffected)
+	// Verify that mockArticle is not in database
+	_, err = s.ArticlesRepo.GetArticle(mockArticle.ID)
+	if err != repository.ErrNotFound {
+		t.Fatalf("Expected %v, got %v", repository.ErrNotFound, err)
 	}
 }
 
 func TestDeleteArticleAsAdministratorThatOwnsArticleReturnNoContent(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	mockArticles[1].UserID = 1
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 1
-	e.DB.Create(&mockUsers)
-	e.DB.Create(&mockCategories)
-	e.DB.Create(&mockArticles)
+	for _, c := range mockCategories {
+		s.CategoriesRepo.CreateCategory(&c)
+	}
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
+	for _, a := range mockArticles {
+		s.ArticlesRepo.CreateArticle(&a)
+	}
+
 	mockArticle := mockArticles[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
@@ -770,10 +885,9 @@ func TestDeleteArticleAsAdministratorThatOwnsArticleReturnNoContent(t *testing.T
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is not in database
-	var aInDB *models.Article
-	tx := e.DB.Find(&aInDB, mockArticle.ID)
-	if tx.RowsAffected != 0 {
-		t.Fatalf("Expected %v, got %v", 0, tx.RowsAffected)
+	// Verify that mockArticle is not in database
+	_, err = s.ArticlesRepo.GetArticle(mockArticle.ID)
+	if err != repository.ErrNotFound {
+		t.Fatalf("Expected %v, got %v", repository.ErrNotFound, err)
 	}
 }

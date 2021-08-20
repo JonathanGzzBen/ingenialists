@@ -36,8 +36,8 @@ func (r *UsersGormRepository) GetAllUsers() ([]models.User, error) {
 func (r *UsersGormRepository) GetUser(id uint) (*models.User, error) {
 	var user *models.User
 	res := r.db.Find(&user, id)
-	if res.Error == gorm.ErrRecordNotFound {
-		return nil, ErrCouldNotRetrieve
+	if res.Error == gorm.ErrRecordNotFound || res.RowsAffected != 1 {
+		return nil, ErrNotFound
 	}
 	if res.Error != nil {
 		return nil, ErrCouldNotRetrieve

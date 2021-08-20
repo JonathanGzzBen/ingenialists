@@ -19,12 +19,13 @@ var mockUsers = []models.User{
 }
 
 func TestGetAllUsers(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/users", ts.URL))
 	if err != nil {
@@ -53,12 +54,13 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
 	mockUser := mockUsers[1]
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID))
@@ -88,12 +90,13 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestUpdateUserChangeNameAsAdministratorReturnOkDontMakeChanges(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
 	mockUser := mockUsers[1]
 	mockUser.Name = "User Updated"
 
@@ -129,20 +132,23 @@ func TestUpdateUserChangeNameAsAdministratorReturnOkDontMakeChanges(t *testing.T
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var uInDB models.User
-	e.DB.Find(&uInDB, mockUser.ID)
-	if uInDB.Name == mockUser.Name {
-		t.Fatalf("Expected %v, got %v", uInDB.Name, mockUser.Name)
+	uInDb, err := s.UsersRepo.GetUser(mockUser.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if uInDb.Name == mockUser.Name {
+		t.Fatalf("Expected %v, got %v", uInDb.Name, mockUser.Name)
 	}
 }
 
 func TestUpdateUserChangeRoleAsAdministratorReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
 	mockUser := mockUsers[1]
 	mockUser.Role = models.RoleAdministrator
 
@@ -178,10 +184,12 @@ func TestUpdateUserChangeRoleAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var uInDB models.User
-	e.DB.Find(&uInDB, mockUser.ID)
-	if string(uInDB.Role) != string(mockUser.Role) {
-		t.Fatalf("Expected %v, got %v", mockUser.Role, uInDB.Role)
+	uInDb, err := s.UsersRepo.GetUser(mockUser.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if string(uInDb.Role) != string(mockUser.Role) {
+		t.Fatalf("Expected %v, got %v", mockUser.Role, uInDb.Role)
 	}
 }
 
@@ -191,12 +199,13 @@ func TestUpdateUserChangeRoleAsAdministratorReturnOk(t *testing.T) {
 //
 // In testing mode, authenticated user will have ID = 1.
 func TestUpdateUserChangeNameAsDifferentUserReturnForbidden(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	e.DB.Create(&mockUsers)
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
 	// mockUser has ID different from 1
 	mockUser := mockUsers[1]
 	mockUser.Name = "Updated name"
@@ -232,8 +241,10 @@ func TestUpdateUserChangeNameAsDifferentUserReturnForbidden(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var uInDB models.User
-	e.DB.Find(&uInDB, mockUser.ID)
+	uInDB, err := s.UsersRepo.GetUser(mockUser.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	// If user was updated in db
 	if uInDB.Name != mockUsers[1].Name {
 		t.Fatalf("Expected %v, got %v", mockUsers[1].Name, uInDB.Name)
@@ -246,13 +257,14 @@ func TestUpdateUserChangeNameAsDifferentUserReturnForbidden(t *testing.T) {
 //
 // In testing mode, authenticated user will have ID = 1.
 func TestUpdateUserChangeNameAsSameUserReturnOk(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
+	s := NewTestServer()
+	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
 	mockUsers[1].ID = 1
-	e.DB.Create(&mockUsers)
+	for _, u := range mockUsers {
+		s.UsersRepo.CreateUser(&u)
+	}
 	mockUser := mockUsers[1]
 	mockUser.Name = "Updated name"
 
@@ -288,8 +300,10 @@ func TestUpdateUserChangeNameAsSameUserReturnOk(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	var uInDB models.User
-	e.DB.Find(&uInDB, mockUser.ID)
+	uInDB, err := s.UsersRepo.GetUser(mockUser.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
 	if uInDB.Name != mockUser.Name {
 		t.Fatalf("Expected %v, got %v", mockUser.Name, uInDB.Name)
 	}

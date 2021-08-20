@@ -11,11 +11,28 @@ import (
 
 type TestEnvironment struct {
 	Server *server.Server
-	DB     *gorm.DB
 }
 
 func (e *TestEnvironment) Close() {
 	os.Remove("test.db")
+}
+
+func NewTestServer() *server.Server {
+	os.Remove("test.db")
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("Could not connect to database")
+	}
+	return server.NewServer(
+		server.ServerConfig{
+			GoogleConfig:   &OAuth2ConfigMock{},
+			Hostname:       "http://localhost:8080",
+			Development:    true,
+			CategoriesRepo: repository.NewCategoriesGormRepository(db),
+			UsersRepo:      repository.NewUsersGormRepository(db),
+			ArticlesRepo:   repository.NewArticlesGormRepository(db),
+		},
+	)
 }
 
 func NewTestEnvironment() *TestEnvironment {
@@ -26,7 +43,6 @@ func NewTestEnvironment() *TestEnvironment {
 	}
 	server := server.NewServer(
 		server.ServerConfig{
-			DB:             db,
 			GoogleConfig:   &OAuth2ConfigMock{},
 			Hostname:       "http://localhost:8080",
 			Development:    true,
@@ -37,7 +53,6 @@ func NewTestEnvironment() *TestEnvironment {
 	)
 	ts := &TestEnvironment{
 		Server: server,
-		DB:     db,
 	}
 	return ts
 }
