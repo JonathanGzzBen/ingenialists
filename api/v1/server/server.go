@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
@@ -9,25 +10,34 @@ import (
 )
 
 type Server struct {
-	db           *gorm.DB
-	googleClient IGoogleClient
-	googleConfig IOauthConfig
-	development  bool
-	Router       *gin.Engine
+	db             *gorm.DB
+	googleClient   IGoogleClient
+	googleConfig   IOauthConfig
+	development    bool
+	Router         *gin.Engine
+	CategoriesRepo repository.CategoriesRepository
+	UsersRepo      repository.UsersRepository
+	ArticlesRepo   repository.ArticlesRepository
 }
 
 type ServerConfig struct {
-	DB           *gorm.DB
-	GoogleConfig IOauthConfig
-	Hostname     string
-	Development  bool
+	DB             *gorm.DB
+	GoogleConfig   IOauthConfig
+	Hostname       string
+	Development    bool
+	CategoriesRepo repository.CategoriesRepository
+	UsersRepo      repository.UsersRepository
+	ArticlesRepo   repository.ArticlesRepository
 }
 
 func NewServer(sc ServerConfig) *Server {
 	server := &Server{
-		db:           sc.DB,
-		googleConfig: sc.GoogleConfig,
-		development:  sc.Development,
+		db:             sc.DB,
+		googleConfig:   sc.GoogleConfig,
+		development:    sc.Development,
+		CategoriesRepo: sc.CategoriesRepo,
+		UsersRepo:      sc.UsersRepo,
+		ArticlesRepo:   sc.ArticlesRepo,
 	}
 	if sc.Development {
 		server.googleClient = &GoogleClientMock{}

@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strconv"
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // This data should not be modified, its purpose
@@ -23,12 +27,25 @@ var mockCategories = []models.Category{
 }
 
 func TestGetAllCategories(t *testing.T) {
-	e := NewTestEnvironment()
-	defer e.Close()
-	ts := httptest.NewServer(e.Server.Router)
-	defer ts.Close()
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetAllCategories").Return(mockCategories, nil)
+	os.Remove("test.db")
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("Could not connect to database")
+	}
+	server := server.NewServer(
+		server.ServerConfig{
+			DB:             db,
+			GoogleConfig:   &OAuth2ConfigMock{},
+			Hostname:       "http://localhost:8080",
+			Development:    true,
+			CategoriesRepo: mockCategoriesRepo,
+		},
+	)
 
-	e.DB.Create(&mockCategories)
+	ts := httptest.NewServer(server.Router)
+	defer ts.Close()
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/categories", ts.URL))
 	if err != nil {
