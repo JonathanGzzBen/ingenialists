@@ -47,8 +47,8 @@ func (r CategoriesGormRepository) GetAllCategories() ([]models.Category, error) 
 func (r *CategoriesGormRepository) GetCategory(id uint) (*models.Category, error) {
 	var category *models.Category
 	res := r.db.Find(&category, id)
-	if res.Error == gorm.ErrRecordNotFound {
-		return nil, ErrCouldNotRetrieve
+	if res.Error == gorm.ErrRecordNotFound || res.RowsAffected != 1 {
+		return nil, ErrNotFound
 	}
 	if res.Error != nil {
 		return nil, ErrCouldNotRetrieve

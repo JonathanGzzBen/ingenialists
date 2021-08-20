@@ -37,8 +37,8 @@ func (r ArticlesGormRepository) GetAllArticles() ([]models.Article, error) {
 func (r ArticlesGormRepository) GetArticle(id uint) (*models.Article, error) {
 	var article *models.Article
 	res := r.db.Preload(clause.Associations).Find(&article, id)
-	if res.Error == gorm.ErrRecordNotFound {
-		return nil, ErrCouldNotRetrieve
+	if res.Error == gorm.ErrRecordNotFound || res.RowsAffected != 1 {
+		return nil, ErrNotFound
 	}
 	if res.Error != nil {
 		return nil, ErrCouldNotRetrieve
@@ -75,7 +75,7 @@ func (r ArticlesGormRepository) DeleteArticle(id uint) error {
 	if err != nil {
 		return err
 	}
-	res := r.db.Delete(a)
+	res := r.db.Delete(&a)
 	if res.Error != nil {
 		return ErrCouldNotDelete
 	}

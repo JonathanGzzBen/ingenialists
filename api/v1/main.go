@@ -43,7 +43,6 @@ func main() {
 		panic("Could not connect to database")
 	}
 	serverConfig := server.ServerConfig{
-		DB: db,
 		GoogleConfig: &oauth2.Config{
 			ClientID:     os.Getenv("ING_GOOGLE_CLIENT_ID"),
 			ClientSecret: os.Getenv("ING_GOOGLE_CLIENT_SECRET"),
