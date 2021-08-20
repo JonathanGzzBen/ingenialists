@@ -15,7 +15,7 @@ type Server struct {
 	googleConfig   IOauthConfig
 	development    bool
 	Router         *gin.Engine
-	categoriesRepo repositories.CategoriesRepository
+	CategoriesRepo repositories.CategoriesRepository
 }
 
 type ServerConfig struct {
@@ -31,7 +31,7 @@ func NewServer(sc ServerConfig) *Server {
 		db:             sc.DB,
 		googleConfig:   sc.GoogleConfig,
 		development:    sc.Development,
-		categoriesRepo: sc.CategoriesRepo,
+		CategoriesRepo: sc.CategoriesRepo,
 	}
 	if sc.Development {
 		server.googleClient = &GoogleClientMock{}

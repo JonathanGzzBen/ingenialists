@@ -28,7 +28,7 @@ type UpdateCategoryDTO struct {
 // 	@Failure 500 {object} models.APIError
 // 	@Router /categories [get]
 func (s *Server) GetAllCategories(c *gin.Context) {
-	categories, err := s.categoriesRepo.GetAllCategories()
+	categories, err := s.CategoriesRepo.GetAllCategories()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not get categories"})
 		return
@@ -52,7 +52,7 @@ func (s *Server) GetCategory(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.APIError{Code: http.StatusBadRequest, Message: "invalid id: " + err.Error()})
 		return
 	}
-	category, err := s.categoriesRepo.GetCategory(uint(id))
+	category, err := s.CategoriesRepo.GetCategory(uint(id))
 	if err == repositories.ErrNotFound {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
@@ -93,7 +93,7 @@ func (s *Server) CreateCategory(c *gin.Context) {
 		return
 	}
 	// result := s.db.Create(&category)
-	category, err = s.categoriesRepo.CreateCategory(category)
+	category, err = s.CategoriesRepo.CreateCategory(category)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not create category"})
 		return
@@ -132,7 +132,7 @@ func (s *Server) UpdateCategory(c *gin.Context) {
 		return
 	}
 	var category *models.Category
-	category, err = s.categoriesRepo.GetCategory(uint(id))
+	category, err = s.CategoriesRepo.GetCategory(uint(id))
 	if err == repositories.ErrNotFound {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category with provided id not found"})
 		return
@@ -150,7 +150,7 @@ func (s *Server) UpdateCategory(c *gin.Context) {
 
 	category.Name = cu.Name
 	category.ImageURL = cu.ImageURL
-	category, err = s.categoriesRepo.UpdateCategory(category)
+	category, err = s.CategoriesRepo.UpdateCategory(category)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusBadRequest, Message: "could not save updated category"})
 		return
@@ -189,13 +189,13 @@ func (s *Server) DeleteCategory(c *gin.Context) {
 		return
 	}
 
-	category, err := s.categoriesRepo.GetCategory(uint(id))
+	category, err := s.CategoriesRepo.GetCategory(uint(id))
 	if err == repositories.ErrNotFound {
 		c.JSON(http.StatusNotFound, models.APIError{Code: http.StatusNotFound, Message: "category not found"})
 		return
 	}
 
-	err = s.categoriesRepo.DeleteCategory(category.ID)
+	err = s.CategoriesRepo.DeleteCategory(category.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{Code: http.StatusInternalServerError, Message: "could not delete article"})
 		return
