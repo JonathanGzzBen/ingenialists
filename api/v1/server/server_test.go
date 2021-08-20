@@ -32,6 +32,7 @@ func NewTestEnvironment() *TestEnvironment {
 			Development:    true,
 			CategoriesRepo: repository.NewCategoriesGormRepository(db),
 			UsersRepo:      repository.NewUsersGormRepository(db),
+			ArticlesRepo:   repository.NewArticlesGormRepository(db),
 		},
 	)
 	ts := &TestEnvironment{

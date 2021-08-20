@@ -53,6 +53,7 @@ func main() {
 		},
 		CategoriesRepo: repository.NewCategoriesGormRepository(db),
 		UsersRepo:      repository.NewUsersGormRepository(db),
+		ArticlesRepo:   repository.NewArticlesGormRepository(db),
 	}
 	// hostname is used by multiple controllers
 	// to make requests to authentication controller
