@@ -66,13 +66,11 @@ func TestGetCategory(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
+	mockCategory := &mockCategories[1]
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", mockCategory.ID).Return(mockCategory, nil)
 
-	// Take second category to make sure it's finding
-	// it by the ID and not the first item in DB
-	mockCategory := mockCategories[1]
+	s.CategoriesRepo = mockCategoriesRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/categories/"+strconv.Itoa(int(mockCategory.ID)), ts.URL))
 	if err != nil {
@@ -92,7 +90,7 @@ func TestGetCategory(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-	var resCategory models.Category
+	var resCategory *models.Category
 	err = json.NewDecoder(res.Body).Decode(&resCategory)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
