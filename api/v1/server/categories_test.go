@@ -232,18 +232,15 @@ func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.Name = "Category Updated"
+	cToUpdate := mockCategories[1]
+	cToUpdate.Name = "Category Updated"
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mcJSONBytes, err := json.Marshal(cToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, cToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -263,7 +260,6 @@ func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
 }
 
 func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
@@ -271,18 +267,15 @@ func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.Name = "Category Updated"
+	cToUpdate := mockCategories[1]
+	cToUpdate.Name = "Category Updated"
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mcJSONBytes, err := json.Marshal(cToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, cToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -310,18 +303,20 @@ func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.Name = "Category Updated"
+	cToUpdate := mockCategories[1]
+	cToUpdate.Name = "Category Updated"
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("UpdateCategory", &cToUpdate).Return(&cToUpdate, nil)
+	mockCategoriesRepo.On("GetCategory", cToUpdate.ID).Return(&cToUpdate, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, cToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -342,12 +337,13 @@ func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
+	var resCategory *models.Category
+	err = json.NewDecoder(res.Body).Decode(&resCategory)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if cInDB.Name != mockCategory.Name {
-		t.Fatalf("Expected %v, got %v", mockCategory.Name, cInDB.Name)
+	if !reflect.DeepEqual(*resCategory, cToUpdate) {
+		t.Fatalf("Expected %v, got %v", cToUpdate, *resCategory)
 	}
 }
 
