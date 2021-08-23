@@ -63,12 +63,13 @@ func TestGetUser(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	mockUser := mockUsers[1]
+	uToGet := mockUsers[1]
 
-	res, err := http.Get(fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID))
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetUser", uToGet.ID).Return(&uToGet, nil)
+	s.UsersRepo = mockUsersRepo
+
+	res, err := http.Get(fmt.Sprintf("%s/v1/users/%d", ts.URL, uToGet.ID))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -89,8 +90,8 @@ func TestGetUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if mockUser != resUser {
-		t.Fatalf("Expected %v, got %v", mockUser, resUser)
+	if uToGet != resUser {
+		t.Fatalf("Expected %v, got %v", uToGet, resUser)
 	}
 }
 
