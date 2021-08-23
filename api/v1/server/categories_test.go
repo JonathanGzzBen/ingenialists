@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
-	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
@@ -352,9 +351,6 @@ func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -377,15 +373,6 @@ func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
-	// Verify that mockCategory is still in database
-	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if *cInDB != mockCategory {
-		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
-	}
 }
 
 func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
@@ -393,9 +380,6 @@ func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -419,14 +403,6 @@ func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is still in database
-	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if *cInDB != mockCategory {
-		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
-	}
 }
 
 func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
@@ -434,10 +410,12 @@ func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
 	mockCategory := mockCategories[1]
+
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("DeleteCategory", mockCategory.ID).Return(nil)
+	mockCategoriesRepo.On("GetCategory", mockCategory.ID).Return(&mockCategory, nil)
+	s.CategoriesRepo = mockCategoriesRepo
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
 	if err != nil {
@@ -458,12 +436,5 @@ func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
 	}
 	if val[0] != "text/plain; charset=utf-8" {
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
-	}
-
-	// Verify that mockCategory is not in database
-	_, err = s.CategoriesRepo.GetCategory(mockCategory.ID)
-	if err != repository.ErrNotFound {
-		t.Fatalf("Expected %v , got %v", repository.ErrNotFound, err)
-
 	}
 }
