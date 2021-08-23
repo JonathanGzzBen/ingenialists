@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
@@ -26,6 +27,10 @@ func TestGetAllUsers(t *testing.T) {
 	for _, u := range mockUsers {
 		s.UsersRepo.CreateUser(&u)
 	}
+
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetAllUsers").Return(mockUsers, nil)
+	s.UsersRepo = mockUsersRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/users", ts.URL))
 	if err != nil {
