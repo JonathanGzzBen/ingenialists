@@ -106,13 +106,12 @@ func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.ID = 0
+	cToCreate := mockCategories[1]
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -144,13 +143,13 @@ func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.ID = 0
+	cToCreate := mockCategories[1]
+	cToCreate.ID = 0
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -175,7 +174,6 @@ func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
 }
 
 func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
@@ -183,13 +181,17 @@ func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.ID = 0
+	cToCreate := mockCategories[1]
+	cToCreate.ID = 0
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	cCreated := cToCreate
+	cCreated.ID = 1
+
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("CreateCategory", &cToCreate).Return(&cCreated, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -215,6 +217,14 @@ func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
+	var resCategory *models.Category
+	err = json.NewDecoder(res.Body).Decode(&resCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if !reflect.DeepEqual(*resCategory, cCreated) {
+		t.Fatalf("Expected %v, got %v", cCreated, *resCategory)
+	}
 }
 
 func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
