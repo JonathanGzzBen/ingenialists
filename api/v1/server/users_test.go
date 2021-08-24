@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
@@ -26,6 +27,10 @@ func TestGetAllUsers(t *testing.T) {
 	for _, u := range mockUsers {
 		s.UsersRepo.CreateUser(&u)
 	}
+
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetAllUsers").Return(mockUsers, nil)
+	s.UsersRepo = mockUsersRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/users", ts.URL))
 	if err != nil {
@@ -58,12 +63,13 @@ func TestGetUser(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	mockUser := mockUsers[1]
+	uToGet := mockUsers[1]
 
-	res, err := http.Get(fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID))
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetUser", uToGet.ID).Return(&uToGet, nil)
+	s.UsersRepo = mockUsersRepo
+
+	res, err := http.Get(fmt.Sprintf("%s/v1/users/%d", ts.URL, uToGet.ID))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -84,8 +90,8 @@ func TestGetUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if mockUser != resUser {
-		t.Fatalf("Expected %v, got %v", mockUser, resUser)
+	if uToGet != resUser {
+		t.Fatalf("Expected %v, got %v", uToGet, resUser)
 	}
 }
 
@@ -94,18 +100,21 @@ func TestUpdateUserChangeNameAsAdministratorReturnOkDontMakeChanges(t *testing.T
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	mockUser := mockUsers[1]
-	mockUser.Name = "User Updated"
+	uToUpdate := mockUsers[1]
+	uUpdated := uToUpdate
+	uUpdated.Name = "User Updated"
 
-	muJSONBytes, err := json.Marshal(mockUser)
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetUser", uToUpdate.ID).Return(&uToUpdate, nil)
+	mockUsersRepo.On("UpdateUser", &uToUpdate).Return(&uToUpdate, nil)
+	s.UsersRepo = mockUsersRepo
+
+	muJSONBytes, err := json.Marshal(uUpdated)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID), bytes.NewBuffer(muJSONBytes))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, uToUpdate.ID), bytes.NewBuffer(muJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -131,13 +140,8 @@ func TestUpdateUserChangeNameAsAdministratorReturnOkDontMakeChanges(t *testing.T
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-
-	uInDb, err := s.UsersRepo.GetUser(mockUser.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if uInDb.Name == mockUser.Name {
-		t.Fatalf("Expected %v, got %v", uInDb.Name, mockUser.Name)
+	if resUser.Name != uToUpdate.Name {
+		t.Fatalf("Expected %v, got %v", uToUpdate.Name, resUser.Name)
 	}
 }
 
@@ -146,18 +150,21 @@ func TestUpdateUserChangeRoleAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	mockUser := mockUsers[1]
-	mockUser.Role = models.RoleAdministrator
+	uToUpdate := mockUsers[1]
+	uUpdated := uToUpdate
+	uUpdated.Role = models.RoleAdministrator
 
-	muJSONBytes, err := json.Marshal(mockUser)
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetUser", uToUpdate.ID).Return(&uToUpdate, nil)
+	mockUsersRepo.On("UpdateUser", &uUpdated).Return(&uUpdated, nil)
+	s.UsersRepo = mockUsersRepo
+
+	muJSONBytes, err := json.Marshal(uUpdated)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID), bytes.NewBuffer(muJSONBytes))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, uUpdated.ID), bytes.NewBuffer(muJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -183,13 +190,8 @@ func TestUpdateUserChangeRoleAsAdministratorReturnOk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-
-	uInDb, err := s.UsersRepo.GetUser(mockUser.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if string(uInDb.Role) != string(mockUser.Role) {
-		t.Fatalf("Expected %v, got %v", mockUser.Role, uInDb.Role)
+	if string(resUser.Role) != string(uUpdated.Role) {
+		t.Fatalf("Expected %v, got %v", uUpdated.Role, resUser.Role)
 	}
 }
 
@@ -203,19 +205,19 @@ func TestUpdateUserChangeNameAsDifferentUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	// mockUser has ID different from 1
-	mockUser := mockUsers[1]
-	mockUser.Name = "Updated name"
+	// uToUpdate has ID different from 1
+	uToUpdate := mockUsers[1]
+	uUpdated := uToUpdate
+	uUpdated.Name = "Updated name"
 
-	muJSONBytes, err := json.Marshal(mockUser)
+	s.UsersRepo = &mocks.UsersRepository{}
+
+	muJSONBytes, err := json.Marshal(uUpdated)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID), bytes.NewBuffer(muJSONBytes))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, uToUpdate.ID), bytes.NewBuffer(muJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -234,21 +236,6 @@ func TestUpdateUserChangeNameAsDifferentUserReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
-	var resUser models.User
-	err = json.NewDecoder(res.Body).Decode(&resUser)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	uInDB, err := s.UsersRepo.GetUser(mockUser.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	// If user was updated in db
-	if uInDB.Name != mockUsers[1].Name {
-		t.Fatalf("Expected %v, got %v", mockUsers[1].Name, uInDB.Name)
-	}
 }
 
 // TestUpdateUserChangeNameAsSameUserReturnOk tests a request
@@ -261,19 +248,22 @@ func TestUpdateUserChangeNameAsSameUserReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockUsers[1].ID = 1
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	mockUser := mockUsers[1]
-	mockUser.Name = "Updated name"
+	uToUpdate := mockUsers[1]
+	uToUpdate.ID = 1
+	uUpdated := uToUpdate
+	uUpdated.Name = "Updated name"
 
-	muJSONBytes, err := json.Marshal(mockUser)
+	mockUsersRepo := &mocks.UsersRepository{}
+	mockUsersRepo.On("GetUser", uToUpdate.ID).Return(&uToUpdate, nil)
+	mockUsersRepo.On("UpdateUser", &uUpdated).Return(&uUpdated, nil)
+	s.UsersRepo = mockUsersRepo
+
+	muJSONBytes, err := json.Marshal(uUpdated)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, mockUser.ID), bytes.NewBuffer(muJSONBytes))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/users/%d", ts.URL, uToUpdate.ID), bytes.NewBuffer(muJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -299,12 +289,7 @@ func TestUpdateUserChangeNameAsSameUserReturnOk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-
-	uInDB, err := s.UsersRepo.GetUser(mockUser.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if uInDB.Name != mockUser.Name {
-		t.Fatalf("Expected %v, got %v", mockUser.Name, uInDB.Name)
+	if resUser.Name != uToUpdate.Name {
+		t.Fatalf("Expected %v, got %v", uToUpdate.Name, resUser.Name)
 	}
 }
