@@ -10,6 +10,7 @@ import (
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
@@ -42,15 +43,9 @@ func TestGetAllArticles(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
-	}
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetAllArticles").Return(mockArticles, nil)
+	s.ArticlesRepo = mockArticlesRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/articles", ts.URL))
 	if err != nil {
