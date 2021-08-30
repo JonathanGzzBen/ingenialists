@@ -81,17 +81,11 @@ func TestGetArticle(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
-	}
+	mockArticle := &mockArticles[1]
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", mockArticle.ID).Return(mockArticle, nil)
 
-	mockArticle := mockArticles[1]
+	s.ArticlesRepo = mockArticlesRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID))
 	if err != nil {
