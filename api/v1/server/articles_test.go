@@ -121,23 +121,12 @@ func TestCreateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
-	}
+	aToCreate := mockArticles[1]
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
-	}
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	s.ArticlesRepo = mockArticlesRepo
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -168,23 +157,12 @@ func TestCreateArticleAsReaderReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
-	}
+	aToCreate := mockArticles[1]
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
-	}
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	s.ArticlesRepo = mockArticlesRepo
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -216,23 +194,29 @@ func TestCreateArticleAsWriterReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	c := models.Category{
+		ID:   1,
+		Name: "First category",
 	}
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
+	aToCreate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: c.ID,
+		UserID:     1,
 	}
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	aCreated := aToCreate
+	aCreated.ID = 1
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("CreateArticle", &aToCreate).Return(&aCreated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", aToCreate.CategoryID).Return(&c, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -263,8 +247,8 @@ func TestCreateArticleAsWriterReturnOk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if resArticle.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	if resArticle.Title != aToCreate.Title {
+		t.Fatalf("Expected %v, got %v", aToCreate.Title, resArticle.Title)
 	}
 }
 
@@ -273,23 +257,29 @@ func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	c := models.Category{
+		ID:   1,
+		Name: "First category",
 	}
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
+	aToCreate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: c.ID,
+		UserID:     1,
 	}
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	aCreated := aToCreate
+	aCreated.ID = 1
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("CreateArticle", &aToCreate).Return(&aCreated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", aToCreate.CategoryID).Return(&c, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -320,8 +310,8 @@ func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if resArticle.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	if resArticle.Title != aToCreate.Title {
+		t.Fatalf("Expected %v, got %v", aToCreate.Title, resArticle.Title)
 	}
 }
 
@@ -330,25 +320,34 @@ func TestUpdateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	c := models.Category{
+		ID:   1,
+		Name: "First category",
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	aToCreate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: c.ID,
+		UserID:     1,
+	}
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	aCreated := aToCreate
+	aCreated.ID = 1
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("CreateArticle", &aToCreate).Return(&aCreated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", aToCreate.CategoryID).Return(&c, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToCreate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
