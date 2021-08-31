@@ -19,6 +19,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2.5.2
         with:
           version: latest
+          working-directory: api/v1
 
   build:
     runs-on: ubuntu-latest
