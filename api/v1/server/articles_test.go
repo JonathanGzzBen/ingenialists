@@ -13,34 +13,25 @@ import (
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
 
-var mockArticles = []models.Article{
-	{
-		ID:         123,
-		UserID:     mockUsers[0].ID,
-		CategoryID: mockCategories[0].ID,
-		Body:       "First article body",
-		Title:      "First article title",
-	},
-	{
-		ID:         456,
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Body:       "Second article body",
-		Title:      "Second article title",
-	},
-	{
-		ID:         789,
-		UserID:     mockUsers[2].ID,
-		CategoryID: mockCategories[2].ID,
-		Body:       "Third article body",
-		Title:      "THird article title",
-	},
-}
-
 func TestGetAllArticles(t *testing.T) {
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
+
+	mockArticles := []models.Article{
+		models.Article{
+			ID:    1,
+			Title: "First article",
+		},
+		models.Article{
+			ID:    2,
+			Title: "Second article",
+		},
+		models.Article{
+			ID:    3,
+			Title: "Third article",
+		},
+	}
 
 	mockArticlesRepo := &mocks.ArticlesRepository{}
 	mockArticlesRepo.On("GetAllArticles").Return(mockArticles, nil)
@@ -80,13 +71,16 @@ func TestGetArticle(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticle := &mockArticles[1]
+	aToGet := &models.Article{
+		ID:    1,
+		Title: "First article",
+	}
 	mockArticlesRepo := &mocks.ArticlesRepository{}
-	mockArticlesRepo.On("GetArticle", mockArticle.ID).Return(mockArticle, nil)
+	mockArticlesRepo.On("GetArticle", aToGet.ID).Return(aToGet, nil)
 
 	s.ArticlesRepo = mockArticlesRepo
 
-	res, err := http.Get(fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID))
+	res, err := http.Get(fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToGet.ID))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -110,8 +104,8 @@ func TestGetArticle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if resArticle.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	if resArticle.Title != aToGet.Title {
+		t.Fatalf("Expected %v, got %v", aToGet.Title, resArticle.Title)
 	}
 }
 
@@ -120,7 +114,10 @@ func TestCreateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	aToCreate := mockArticles[1]
+	aToCreate := &models.Article{
+		ID:    0,
+		Title: "First article",
+	}
 
 	mockArticlesRepo := &mocks.ArticlesRepository{}
 	s.ArticlesRepo = mockArticlesRepo
@@ -156,7 +153,10 @@ func TestCreateArticleAsReaderReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	aToCreate := mockArticles[1]
+	aToCreate := models.Article{
+		ID:    0,
+		Title: "First article",
+	}
 
 	mockArticlesRepo := &mocks.ArticlesRepository{}
 	s.ArticlesRepo = mockArticlesRepo
@@ -543,7 +543,6 @@ func TestUpdateArticleAsAdministratorThatOwnsArticleReturnOk(t *testing.T) {
 }
 
 func TestUpdateArticleAsAdministratorThatDoesNotOwnArticleReturnOk(t *testing.T) {
-	mockArticles[1].UserID = 2
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
@@ -675,7 +674,6 @@ func TestDeleteArticleAsReaderReturnForbidden(t *testing.T) {
 }
 
 func TestDeleteArticleAsWriterThatDoesNotOwnArticleReturnForbidden(t *testing.T) {
-	mockArticles[1].UserID = 2
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
@@ -792,7 +790,6 @@ func TestDeleteArticleAsAdministratorThatDoesNotOwnArticleReturnNoContent(t *tes
 }
 
 func TestDeleteArticleAsAdministratorThatOwnsArticleReturnNoContent(t *testing.T) {
-	mockArticles[1].UserID = 1
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
