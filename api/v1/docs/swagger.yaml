@@ -137,7 +137,7 @@ info:
     name: MIT License
     url: https://mit-license.org/
   title: Ingenialists API V1
-  version: v1.0.2
+  version: v1.0.3
 paths:
   /articles:
     get:
