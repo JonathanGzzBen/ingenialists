@@ -2,7 +2,6 @@ name: Latest Release
 
 on:
   push:
-    branches: [main]
     tags:
       - "v*"
 
