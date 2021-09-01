@@ -14,7 +14,7 @@ import (
 )
 
 // @title Ingenialists API V1
-// @version v1.0.1
+// @version v1.0.2
 // @description This is Ingenialist's API
 //
 // @contact.name JonathanGzzBen
