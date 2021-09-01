@@ -12,7 +12,7 @@
             "name": "MIT License",
             "url": "https://mit-license.org/"
         },
-        "version": "v1.0.3"
+        "version": "v1.0.4"
     },
     "host": "localhost:8080",
     "basePath": "/v1",
