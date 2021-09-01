@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ingenialists-build-artifacts
-          path: api/v1/build
+          path: api/v1/build/
   release:
     name: Create Release
     runs-on: 'ubuntu-latest'
@@ -82,6 +82,6 @@ jobs:
         with:
           body_path: ".github/RELEASE-TEMPLATE.md"
           draft: true
-          files: api/v1/build
+          files: build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
