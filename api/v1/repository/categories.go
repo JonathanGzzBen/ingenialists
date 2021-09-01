@@ -29,7 +29,10 @@ var (
 )
 
 func NewCategoriesGormRepository(db *gorm.DB) *CategoriesGormRepository {
-	db.AutoMigrate(&models.Category{})
+	err := db.AutoMigrate(&models.Category{})
+	if err != nil {
+		panic("Could not migrate Categories table")
+	}
 	return &CategoriesGormRepository{
 		db: db,
 	}

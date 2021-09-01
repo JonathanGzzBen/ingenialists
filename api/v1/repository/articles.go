@@ -19,7 +19,10 @@ type ArticlesGormRepository struct {
 }
 
 func NewArticlesGormRepository(db *gorm.DB) *ArticlesGormRepository {
-	db.AutoMigrate(&models.Article{})
+	err := db.AutoMigrate(&models.Article{})
+	if err != nil {
+		panic("Could not migrate Articles table")
+	}
 	return &ArticlesGormRepository{
 		db: db,
 	}

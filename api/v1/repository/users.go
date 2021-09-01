@@ -18,7 +18,11 @@ type UsersGormRepository struct {
 }
 
 func NewUsersGormRepository(db *gorm.DB) *UsersGormRepository {
-	db.AutoMigrate(&models.User{})
+	err := db.AutoMigrate(&models.User{})
+	if err != nil {
+		panic("Could not migrate Users table")
+
+	}
 	return &UsersGormRepository{
 		db: db,
 	}
