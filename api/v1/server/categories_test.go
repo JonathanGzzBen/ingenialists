@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
-	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
@@ -66,13 +65,11 @@ func TestGetCategory(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
+	mockCategory := &mockCategories[1]
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", mockCategory.ID).Return(mockCategory, nil)
 
-	// Take second category to make sure it's finding
-	// it by the ID and not the first item in DB
-	mockCategory := mockCategories[1]
+	s.CategoriesRepo = mockCategoriesRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/categories/"+strconv.Itoa(int(mockCategory.ID)), ts.URL))
 	if err != nil {
@@ -92,7 +89,7 @@ func TestGetCategory(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-	var resCategory models.Category
+	var resCategory *models.Category
 	err = json.NewDecoder(res.Body).Decode(&resCategory)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -108,13 +105,12 @@ func TestCreateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.ID = 0
+	cToCreate := mockCategories[1]
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -146,13 +142,13 @@ func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.ID = 0
+	cToCreate := mockCategories[1]
+	cToCreate.ID = 0
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -177,7 +173,6 @@ func TestCreateCategoryAsWriterReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
 }
 
 func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
@@ -185,13 +180,17 @@ func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.ID = 0
+	cToCreate := mockCategories[1]
+	cToCreate.ID = 0
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	cCreated := cToCreate
+	cCreated.ID = 1
+
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("CreateCategory", &cToCreate).Return(&cCreated, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -217,6 +216,14 @@ func TestCreateCategoryAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
+	var resCategory *models.Category
+	err = json.NewDecoder(res.Body).Decode(&resCategory)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if !reflect.DeepEqual(*resCategory, cCreated) {
+		t.Fatalf("Expected %v, got %v", cCreated, *resCategory)
+	}
 }
 
 func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
@@ -224,18 +231,15 @@ func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.Name = "Category Updated"
+	cToUpdate := mockCategories[1]
+	cToUpdate.Name = "Category Updated"
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mcJSONBytes, err := json.Marshal(cToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, cToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -255,7 +259,6 @@ func TestUpdateCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
 }
 
 func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
@@ -263,18 +266,15 @@ func TestUpdateCategoryAsWriterReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.Name = "Category Updated"
+	cToUpdate := mockCategories[1]
+	cToUpdate.Name = "Category Updated"
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mcJSONBytes, err := json.Marshal(cToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, cToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -302,18 +302,20 @@ func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	mockCategory := mockCategories[1]
-	mockCategory.Name = "Category Updated"
+	cToUpdate := mockCategories[1]
+	cToUpdate.Name = "Category Updated"
 
-	mcJSONBytes, err := json.Marshal(mockCategory)
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("UpdateCategory", &cToUpdate).Return(&cToUpdate, nil)
+	mockCategoriesRepo.On("GetCategory", cToUpdate.ID).Return(&cToUpdate, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	mcJSONBytes, err := json.Marshal(cToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/categories/%d", ts.URL, cToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -334,12 +336,13 @@ func TestUpdateCategoryAsAdministratorReturnOk(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
+	var resCategory *models.Category
+	err = json.NewDecoder(res.Body).Decode(&resCategory)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if cInDB.Name != mockCategory.Name {
-		t.Fatalf("Expected %v, got %v", mockCategory.Name, cInDB.Name)
+	if !reflect.DeepEqual(*resCategory, cToUpdate) {
+		t.Fatalf("Expected %v, got %v", cToUpdate, *resCategory)
 	}
 }
 
@@ -348,9 +351,6 @@ func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -373,15 +373,6 @@ func TestDeleteCategoryAsRegularUserReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
-	// Verify that mockCategory is still in database
-	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if *cInDB != mockCategory {
-		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
-	}
 }
 
 func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
@@ -389,9 +380,6 @@ func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
 	mockCategory := mockCategories[1]
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
@@ -415,14 +403,6 @@ func TestDeleteCategoryAsWriterReturnForbidden(t *testing.T) {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
 
-	// Verify that mockCategory is still in database
-	cInDB, err := s.CategoriesRepo.GetCategory(mockCategory.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if *cInDB != mockCategory {
-		t.Fatalf("Expected %v, got %v", mockCategory, cInDB)
-	}
 }
 
 func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
@@ -430,10 +410,12 @@ func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
 	mockCategory := mockCategories[1]
+
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("DeleteCategory", mockCategory.ID).Return(nil)
+	mockCategoriesRepo.On("GetCategory", mockCategory.ID).Return(&mockCategory, nil)
+	s.CategoriesRepo = mockCategoriesRepo
 
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/categories/%d", ts.URL, mockCategory.ID), nil)
 	if err != nil {
@@ -454,12 +436,5 @@ func TestDeleteCategoryAsAdministratorReturnNoContent(t *testing.T) {
 	}
 	if val[0] != "text/plain; charset=utf-8" {
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
-	}
-
-	// Verify that mockCategory is not in database
-	_, err = s.CategoriesRepo.GetCategory(mockCategory.ID)
-	if err != repository.ErrNotFound {
-		t.Fatalf("Expected %v , got %v", repository.ErrNotFound, err)
-
 	}
 }

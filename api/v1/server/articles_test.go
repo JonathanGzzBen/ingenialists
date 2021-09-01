@@ -9,48 +9,33 @@ import (
 	"testing"
 
 	"github.com/JonathanGzzBen/ingenialists/api/v1/models"
-	"github.com/JonathanGzzBen/ingenialists/api/v1/repository"
+	"github.com/JonathanGzzBen/ingenialists/api/v1/repository/mocks"
 	"github.com/JonathanGzzBen/ingenialists/api/v1/server"
 )
-
-var mockArticles = []models.Article{
-	{
-		ID:         123,
-		UserID:     mockUsers[0].ID,
-		CategoryID: mockCategories[0].ID,
-		Body:       "First article body",
-		Title:      "First article title",
-	},
-	{
-		ID:         456,
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Body:       "Second article body",
-		Title:      "Second article title",
-	},
-	{
-		ID:         789,
-		UserID:     mockUsers[2].ID,
-		CategoryID: mockCategories[2].ID,
-		Body:       "Third article body",
-		Title:      "THird article title",
-	},
-}
 
 func TestGetAllArticles(t *testing.T) {
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
+	mockArticles := []models.Article{
+		models.Article{
+			ID:    1,
+			Title: "First article",
+		},
+		models.Article{
+			ID:    2,
+			Title: "Second article",
+		},
+		models.Article{
+			ID:    3,
+			Title: "Third article",
+		},
 	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
-	}
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetAllArticles").Return(mockArticles, nil)
+	s.ArticlesRepo = mockArticlesRepo
 
 	res, err := http.Get(fmt.Sprintf("%s/v1/articles", ts.URL))
 	if err != nil {
@@ -86,19 +71,16 @@ func TestGetArticle(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
+	aToGet := &models.Article{
+		ID:    1,
+		Title: "First article",
 	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
-	}
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToGet.ID).Return(aToGet, nil)
 
-	mockArticle := mockArticles[1]
+	s.ArticlesRepo = mockArticlesRepo
 
-	res, err := http.Get(fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID))
+	res, err := http.Get(fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToGet.ID))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -122,8 +104,8 @@ func TestGetArticle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if resArticle.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	if resArticle.Title != aToGet.Title {
+		t.Fatalf("Expected %v, got %v", aToGet.Title, resArticle.Title)
 	}
 }
 
@@ -132,23 +114,15 @@ func TestCreateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToCreate := &models.Article{
+		ID:    0,
+		Title: "First article",
 	}
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
-	}
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	s.ArticlesRepo = mockArticlesRepo
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -179,23 +153,15 @@ func TestCreateArticleAsReaderReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToCreate := models.Article{
+		ID:    0,
+		Title: "First article",
 	}
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
-	}
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	s.ArticlesRepo = mockArticlesRepo
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -227,23 +193,29 @@ func TestCreateArticleAsWriterReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	c := models.Category{
+		ID:   1,
+		Name: "First category",
 	}
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
+	aToCreate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: c.ID,
+		UserID:     1,
 	}
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	aCreated := aToCreate
+	aCreated.ID = 1
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("CreateArticle", &aToCreate).Return(&aCreated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", aToCreate.CategoryID).Return(&c, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -274,8 +246,8 @@ func TestCreateArticleAsWriterReturnOk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if resArticle.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	if resArticle.Title != aToCreate.Title {
+		t.Fatalf("Expected %v, got %v", aToCreate.Title, resArticle.Title)
 	}
 }
 
@@ -284,23 +256,29 @@ func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	c := models.Category{
+		ID:   1,
+		Name: "First category",
 	}
 
-	mockArticle := models.Article{
-		UserID:     mockUsers[1].ID,
-		CategoryID: mockCategories[1].ID,
-		Title:      "New Article",
+	aToCreate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: c.ID,
+		UserID:     1,
 	}
 
-	maJSONBytes, err := json.Marshal(mockArticle)
+	aCreated := aToCreate
+	aCreated.ID = 1
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("CreateArticle", &aToCreate).Return(&aCreated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+	mockCategoriesRepo := &mocks.CategoriesRepository{}
+	mockCategoriesRepo.On("GetCategory", aToCreate.CategoryID).Return(&c, nil)
+	s.CategoriesRepo = mockCategoriesRepo
+
+	maJSONBytes, err := json.Marshal(aToCreate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -331,8 +309,8 @@ func TestCreateArticleAsAdministratorReturnOk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if resArticle.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, resArticle.Title)
+	if resArticle.Title != aToCreate.Title {
+		t.Fatalf("Expected %v, got %v", aToCreate.Title, resArticle.Title)
 	}
 }
 
@@ -341,25 +319,22 @@ func TestUpdateArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToUpdate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     1,
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	s.ArticlesRepo = mockArticlesRepo
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	mcJSONBytes, err := json.Marshal(aToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -385,25 +360,22 @@ func TestUpdateArticleAsReaderReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToUpdate := models.Article{
+		ID:         0,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     1,
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	s.ArticlesRepo = mockArticlesRepo
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	mcJSONBytes, err := json.Marshal(aToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -430,26 +402,32 @@ func TestUpdateArticleAsWriterThatOwnsArticleReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 1
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	c := models.Category{
+		ID:   1,
+		Name: "First category",
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	aToUpdate := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: c.ID,
+		UserID:     1,
+	}
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	aUpdated := aToUpdate
+	aUpdated.Title = "Article Updated"
+
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToUpdate.ID).Return(&aToUpdate, nil)
+	mockArticlesRepo.On("UpdateArticle", &aToUpdate).Return(&aUpdated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+
+	mcJSONBytes, err := json.Marshal(aToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -471,31 +449,31 @@ func TestUpdateArticleAsWriterThatOwnsArticleReturnOk(t *testing.T) {
 	}
 }
 
-func TestUpdateArticleAsWriterThatDoesNotOwnArticleReturnOk(t *testing.T) {
+func TestUpdateArticleAsWriterThatDoesNotOwnArticleReturnForbidden(t *testing.T) {
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 2
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToUpdate := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     2,
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	aUpdated := aToUpdate
+	aUpdated.Title = "Article Updated"
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToUpdate.ID).Return(&aToUpdate, nil)
+	s.ArticlesRepo = mockArticlesRepo
+
+	mcJSONBytes, err := json.Marshal(aToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -522,26 +500,27 @@ func TestUpdateArticleAsAdministratorThatOwnsArticleReturnOk(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 1
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToUpdate := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     1,
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	aUpdated := aToUpdate
+	aUpdated.Title = "Article Updated"
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToUpdate.ID).Return(&aToUpdate, nil)
+	mockArticlesRepo.On("UpdateArticle", &aToUpdate).Return(&aUpdated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+
+	mcJSONBytes, err := json.Marshal(aToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -564,30 +543,31 @@ func TestUpdateArticleAsAdministratorThatOwnsArticleReturnOk(t *testing.T) {
 }
 
 func TestUpdateArticleAsAdministratorThatDoesNotOwnArticleReturnOk(t *testing.T) {
-	mockArticles[1].UserID = 2
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToUpdate := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     2,
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.Title = "Article Updated"
+	aUpdated := aToUpdate
+	aUpdated.Title = "Article Updated"
 
-	mcJSONBytes, err := json.Marshal(mockArticle)
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToUpdate.ID).Return(&aToUpdate, nil)
+	mockArticlesRepo.On("UpdateArticle", &aToUpdate).Return(&aUpdated, nil)
+	s.ArticlesRepo = mockArticlesRepo
+
+	mcJSONBytes, err := json.Marshal(aToUpdate)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), bytes.NewBuffer(mcJSONBytes))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToUpdate.ID), bytes.NewBuffer(mcJSONBytes))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -614,19 +594,18 @@ func TestDeleteArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToDelete := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     1,
 	}
 
-	mockArticle := mockArticles[1]
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToDelete.ID).Return(&aToDelete, nil)
+	s.ArticlesRepo = mockArticlesRepo
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToDelete.ID), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -647,12 +626,12 @@ func TestDeleteArticleAsUnauthenticatedUserReturnForbidden(t *testing.T) {
 	}
 
 	// Verify that mockArticle is still in database
-	aInDB, err := s.ArticlesRepo.GetArticle(mockArticle.ID)
+	aInDB, err := s.ArticlesRepo.GetArticle(aToDelete.ID)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
-	if aInDB.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, aInDB.Title)
+	if aInDB.Title != aToDelete.Title {
+		t.Fatalf("Expected %v, got %v", aToDelete.Title, aInDB.Title)
 	}
 }
 
@@ -661,19 +640,18 @@ func TestDeleteArticleAsReaderReturnForbidden(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToDelete := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     2,
 	}
 
-	mockArticle := mockArticles[1]
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToDelete.ID).Return(&aToDelete, nil)
+	s.ArticlesRepo = mockArticlesRepo
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToDelete.ID), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -693,36 +671,25 @@ func TestDeleteArticleAsReaderReturnForbidden(t *testing.T) {
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
-	// Verify that mockArticle is still in database
-	aInDB, err := s.ArticlesRepo.GetArticle(mockArticle.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if aInDB.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, aInDB.Title)
-	}
 }
 
 func TestDeleteArticleAsWriterThatDoesNotOwnArticleReturnForbidden(t *testing.T) {
-	mockArticles[1].UserID = 2
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToDelete := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     2,
 	}
 
-	mockArticle := mockArticles[1]
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToDelete.ID).Return(&aToDelete, nil)
+	s.ArticlesRepo = mockArticlesRepo
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToDelete.ID), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -742,15 +709,6 @@ func TestDeleteArticleAsWriterThatDoesNotOwnArticleReturnForbidden(t *testing.T)
 	if val[0] != "application/json; charset=utf-8" {
 		t.Fatalf("Expected \"application/json; charset=utf-8\", got %s", val[0])
 	}
-
-	// Verify that mockArticle is still in database
-	aInDB, err := s.ArticlesRepo.GetArticle(mockArticle.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if aInDB.Title != mockArticle.Title {
-		t.Fatalf("Expected %v, got %v", mockArticle.Title, aInDB.Title)
-	}
 }
 
 func TestDeleteArticleAsWriterThatOwnsArticleReturnNoContent(t *testing.T) {
@@ -758,21 +716,19 @@ func TestDeleteArticleAsWriterThatOwnsArticleReturnNoContent(t *testing.T) {
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	mockArticles[1].UserID = 1
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToDelete := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     1,
 	}
 
-	mockArticle := mockArticles[1]
-	mockArticle.UserID = 1
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToDelete.ID).Return(&aToDelete, nil)
+	mockArticlesRepo.On("DeleteArticle", aToDelete.ID).Return(nil)
+	s.ArticlesRepo = mockArticlesRepo
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToDelete.ID), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -792,33 +748,26 @@ func TestDeleteArticleAsWriterThatOwnsArticleReturnNoContent(t *testing.T) {
 	if val[0] != "text/plain; charset=utf-8" {
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
 	}
-
-	// Verify that mockArticle is not in database
-	_, err = s.ArticlesRepo.GetArticle(mockArticle.ID)
-	if err != repository.ErrNotFound {
-		t.Fatalf("Expected %v, got %v", repository.ErrNotFound, err)
-	}
 }
 
 func TestDeleteArticleAsAdministratorThatDoesNotOwnArticleReturnNoContent(t *testing.T) {
-	mockArticles[1].UserID = 2
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToDelete := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     2,
 	}
 
-	mockArticle := mockArticles[1]
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToDelete.ID).Return(&aToDelete, nil)
+	mockArticlesRepo.On("DeleteArticle", aToDelete.ID).Return(nil)
+	s.ArticlesRepo = mockArticlesRepo
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToDelete.ID), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -837,34 +786,27 @@ func TestDeleteArticleAsAdministratorThatDoesNotOwnArticleReturnNoContent(t *tes
 	}
 	if val[0] != "text/plain; charset=utf-8" {
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
-	}
-
-	// Verify that mockArticle is not in database
-	_, err = s.ArticlesRepo.GetArticle(mockArticle.ID)
-	if err != repository.ErrNotFound {
-		t.Fatalf("Expected %v, got %v", repository.ErrNotFound, err)
 	}
 }
 
 func TestDeleteArticleAsAdministratorThatOwnsArticleReturnNoContent(t *testing.T) {
-	mockArticles[1].UserID = 1
 	s := NewTestServer()
 	ts := httptest.NewServer(s.Router)
 	defer ts.Close()
 
-	for _, c := range mockCategories {
-		s.CategoriesRepo.CreateCategory(&c)
-	}
-	for _, u := range mockUsers {
-		s.UsersRepo.CreateUser(&u)
-	}
-	for _, a := range mockArticles {
-		s.ArticlesRepo.CreateArticle(&a)
+	aToDelete := models.Article{
+		ID:         1,
+		Title:      "First article",
+		CategoryID: 1,
+		UserID:     2,
 	}
 
-	mockArticle := mockArticles[1]
+	mockArticlesRepo := &mocks.ArticlesRepository{}
+	mockArticlesRepo.On("GetArticle", aToDelete.ID).Return(&aToDelete, nil)
+	mockArticlesRepo.On("DeleteArticle", aToDelete.ID).Return(nil)
+	s.ArticlesRepo = mockArticlesRepo
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, mockArticle.ID), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/articles/%d", ts.URL, aToDelete.ID), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -883,11 +825,5 @@ func TestDeleteArticleAsAdministratorThatOwnsArticleReturnNoContent(t *testing.T
 	}
 	if val[0] != "text/plain; charset=utf-8" {
 		t.Fatalf("Expected \"text/plain; charset=utf-8\", got %s", val[0])
-	}
-
-	// Verify that mockArticle is not in database
-	_, err = s.ArticlesRepo.GetArticle(mockArticle.ID)
-	if err != repository.ErrNotFound {
-		t.Fatalf("Expected %v, got %v", repository.ErrNotFound, err)
 	}
 }
