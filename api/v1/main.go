@@ -37,7 +37,10 @@ import (
 // @scope.profile Grant access to profile
 // @scope.email Grant access to email
 func main() {
-	godotenv.Load(".env")
+	err := godotenv.Load(".env")
+	if err != nil {
+		panic("Could not read .env file")
+	}
 	db, err := gorm.Open(sqlite.Open("test.db"))
 	if err != nil {
 		panic("Could not connect to database")
