@@ -83,6 +83,6 @@ jobs:
         with:
           body_path: ".github/RELEASE-TEMPLATE.md"
           draft: true
-          files: build
+          files: build/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
