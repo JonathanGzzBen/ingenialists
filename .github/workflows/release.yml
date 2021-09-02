@@ -74,6 +74,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ingenialists-build-artifacts
+          path: build
       - name: Release Notes
         run:
           git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
