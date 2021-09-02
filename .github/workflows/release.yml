@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ingenialists-build-artifacts
-          path: api/v1/build
+          path: api/v1/build/
   release:
     name: Create Release
     runs-on: 'ubuntu-latest'
@@ -74,6 +74,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ingenialists-build-artifacts
+          path: build
       - name: Release Notes
         run:
           git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
